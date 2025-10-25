@@ -17,13 +17,15 @@
     "prisma:migrate": "prisma migrate dev --schema=./prisma/schema",
     "prisma:studio": "prisma studio --schema=./prisma/schema",
     "prisma:db:push": "prisma db push --schema=./prisma/schema",
-    "prisma:reset": "npm run prisma:clean && prisma migrate reset --schema=./prisma/schema --force"
+    "prisma:reset": "npm run prisma:clean && prisma migrate reset --schema=./prisma/schema --force",
+    "prisma:dev": "prisma generate --schema=./prisma/schema"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^6.17.0",
+    "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",

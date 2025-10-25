@@ -57,7 +57,14 @@ export const validateRegister = (
     }
 
     // Validate role
-    const validRoles = ["student", "clearingOfficer", "admin"];
+    const validRoles = [
+      "student",
+      "clearingOfficer",
+      "admin",
+      "registrar",
+      "dean",
+      "sao",
+    ];
     if (!validRoles.includes(role)) {
       res.status(400).json({
         error: "Role must be one of: student, clearing officer, admin",

@@ -2,7 +2,10 @@
 model Requirement {
   id             String                        @id @default(auto()) @map("_id") @db.ObjectId
   userId         String                        @db.ObjectId
-  title          String
+  courseCode     String
+  courseName     String
+  yearLevel      String
+  semester       String
   requirements   String[]
   department     String
   dueDate        DateTime

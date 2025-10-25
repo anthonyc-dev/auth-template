@@ -6,7 +6,10 @@ const prisma = new PrismaClient();
 interface UserRequirement {
   id: string;
   userId: string;
-  title: string;
+  courseCode: string;
+  courseName: string;
+  yearLevel: string;
+  semester: string;
   requirements: string[];
   department: string;
   dueDate: Date;
@@ -16,7 +19,10 @@ interface UserRequirement {
 export const createRequirement = async (req: Request, res: Response) => {
   try {
     const {
-      title,
+      courseCode,
+      courseName,
+      yearLevel,
+      semester,
       requirements,
       department,
       dueDate,
@@ -33,7 +39,10 @@ export const createRequirement = async (req: Request, res: Response) => {
     const userRequirement = await prisma.requirement.create({
       data: {
         userId,
-        title,
+        courseCode,
+        courseName,
+        yearLevel,
+        semester,
         requirements,
         department,
         dueDate,

@@ -10,6 +10,8 @@ import {
 } from "../libs/token";
 import { LoginRequest, RegisterRequest } from "../types/type";
 import { PrismaClient } from "@prisma/client";
+import axiosInstance from "../config/axios";
+import axios from "axios";
 
 const prisma = new PrismaClient();
 
@@ -25,6 +27,18 @@ export const register = async (req: Request, res: Response) => {
       password,
       role,
     }: RegisterRequest = req.body;
+
+    // Validate in EMS
+    const response = await axiosInstance.get(
+      `/intigration/getCoBySchoolId/${schoolId}`
+    );
+
+    if (!response.data) {
+      res.status(400).json({
+        message: "Clearing Officer ID not found in Enrollment system.",
+      });
+      return;
+    }
 
     const existing = await prisma.clearingOfficer.findUnique({
       where: { email },
@@ -85,9 +99,19 @@ export const register = async (req: Request, res: Response) => {
       },
       accessToken,
     });
-  } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error: unknown) {
+    console.error("Register error:", error);
+
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      res.status(400).json({
+        message: "Clearing Officer ID not found in Enrollment system.",
+      });
+      return;
+    } else {
+      console.error(error);
+      res.status(500).json({ message: "Error validating clearing officer ID" });
+      return;
+    }
   }
 };
 
