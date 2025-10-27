@@ -17,11 +17,22 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const token_1 = require("../libs/token");
 const client_1 = require("@prisma/client");
+const axios_1 = __importDefault(require("../config/axios"));
+const axios_2 = __importDefault(require("axios"));
 const prisma = new client_1.PrismaClient();
 // ---- Register
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         const { schoolId, firstName, lastName, email, phoneNumber, password, role, } = req.body;
+        // Validate in EMS
+        const response = yield axios_1.default.get(`/intigration/getCoBySchoolId/${schoolId}`);
+        if (!response.data) {
+            res.status(400).json({
+                message: "Clearing Officer ID not found in Enrollment system.",
+            });
+            return;
+        }
         const existing = yield prisma.clearingOfficer.findUnique({
             where: { email },
         });
@@ -76,8 +87,18 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        console.error("Registration error:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.error("Register error:", error);
+        if (axios_2.default.isAxiosError(error) && ((_a = error.response) === null || _a === void 0 ? void 0 : _a.status) === 404) {
+            res.status(400).json({
+                message: "Clearing Officer ID not found in Enrollment system.",
+            });
+            return;
+        }
+        else {
+            console.error(error);
+            res.status(500).json({ message: "Error validating clearing officer ID" });
+            return;
+        }
     }
 });
 exports.register = register;
@@ -115,6 +136,8 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 schoolId: user.schoolId,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                email: user.email,
+                phoneNumber: user.phoneNumber,
                 role: user.role,
             },
             accessToken,

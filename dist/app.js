@@ -18,6 +18,7 @@ const enrollment_addCourse_route_1 = __importDefault(require("./routes/enrollmen
 const enrollment_section_route_1 = __importDefault(require("./routes/enrollment/enrollment-section.route"));
 const enrollment_routes_1 = __importDefault(require("./routes/enrollment/enrollment.routes"));
 const enrollment_auth_route_1 = __importDefault(require("./routes/enrollment/enrollment-auth.route"));
+const intigration_route_1 = __importDefault(require("./routes/intigration.route"));
 const app = (0, express_1.default)();
 app.set("view engine", "ejs");
 app.set("views", path_1.default.join(__dirname, "../views"));
@@ -28,6 +29,8 @@ app.use((0, cors_1.default)({
     origin: [
         process.env.FRONT_END_URL || "",
         process.env.FRONT_END_URL_2 || "",
+        process.env.FRONT_END_URL_3 || "",
+        process.env.FRONT_END_URL_4 || "",
         "http://localhost:5173",
     ],
     credentials: true,
@@ -51,6 +54,7 @@ app.use("/auth", clearingOfficer_route_1.default);
 app.use("/qr-code", qrCode_route_1.default);
 app.use("/req", requirement_route_1.default);
 app.use("/student", student_route_1.default);
+app.use("/updateUser", intigration_route_1.default);
 //routes for Enrollment Management System
 app.use("/enrollment-auth", enrollment_auth_route_1.default);
 app.use("/student-management", enrollment_student_management_route_1.default);

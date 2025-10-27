@@ -155,6 +155,8 @@ export const login = async (req: Request, res: Response) => {
         schoolId: user.schoolId,
         firstName: user.firstName,
         lastName: user.lastName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
         role: user.role,
       },
       accessToken,

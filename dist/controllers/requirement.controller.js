@@ -16,7 +16,7 @@ const prisma = new client_1.PrismaClient();
 const createRequirement = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        const { title, requirements, department, dueDate, description, } = req.body;
+        const { courseCode, courseName, yearLevel, semester, requirements, department, dueDate, description, } = req.body;
         // Get user id from authenticated user (set by your auth middleware)
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId; // adjust if you store it differently
         if (!userId) {
@@ -26,7 +26,10 @@ const createRequirement = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const userRequirement = yield prisma.requirement.create({
             data: {
                 userId,
-                title,
+                courseCode,
+                courseName,
+                yearLevel,
+                semester,
                 requirements,
                 department,
                 dueDate,
@@ -40,7 +43,6 @@ const createRequirement = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.createRequirement = createRequirement;
-// ✅ Get all requirements
 const getAllRequirements = (_, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const requirements = yield prisma.requirement.findMany({

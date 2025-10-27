@@ -13,6 +13,7 @@ import enrollmentCourseRoute from "./routes/enrollment/enrollment-addCourse.rout
 import enrollmentSectionRoute from "./routes/enrollment/enrollment-section.route";
 import enrollmentRoutes from "./routes/enrollment/enrollment.routes";
 import enrollmentAuthRoute from "./routes/enrollment/enrollment-auth.route";
+import updatePass from "./routes/intigration.route";
 
 const app: Application = express();
 
@@ -56,6 +57,8 @@ app.use("/auth", clearingOfficer);
 app.use("/qr-code", qrCodeRoutes);
 app.use("/req", requirementReq);
 app.use("/student", studentRoutes);
+
+app.use("/updateUser", updatePass);
 
 //routes for Enrollment Management System
 app.use("/enrollment-auth", enrollmentAuthRoute);

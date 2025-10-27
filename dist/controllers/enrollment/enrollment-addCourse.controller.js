@@ -15,18 +15,13 @@ const prisma = new client_1.PrismaClient();
 // ✅ Create new course
 const createCourse = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { courseCode, courseName, description, units, department, prerequisites, maxCapacity, day, timeStart, timeEnd, room, instructor, semester, } = req.body;
+        const { courseCode, courseName, description, units, department, prerequisites, maxCapacity, schedules, semester, yearLevel, } = req.body;
         // Validation
         if (!courseCode ||
             !courseName ||
             !units ||
             !department ||
             !maxCapacity ||
-            !day ||
-            !timeStart ||
-            !timeEnd ||
-            !room ||
-            !instructor ||
             !semester) {
             res.status(400).json({ message: "Missing required fields" });
             return;
@@ -47,12 +42,11 @@ const createCourse = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 department,
                 prerequisites: prerequisites || [],
                 maxCapacity,
-                day,
-                timeStart,
-                timeEnd,
-                room,
-                instructor,
+                schedules: {
+                    set: schedules || [],
+                },
                 semester,
+                yearLevel,
             },
         });
         res.status(201).json({
@@ -103,7 +97,7 @@ exports.getCourseById = getCourseById;
 const updateCourse = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { courseCode, courseName, description, units, department, prerequisites, maxCapacity, day, timeStart, timeEnd, room, instructor, semester, } = req.body;
+        const { courseCode, courseName, description, units, department, prerequisites, maxCapacity, schedules, semester, yearLevel, } = req.body;
         const course = yield prisma.courses.findUnique({ where: { id } });
         if (!course) {
             res.status(404).json({ message: "Course not found" });
@@ -111,21 +105,10 @@ const updateCourse = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const updatedCourse = yield prisma.courses.update({
             where: { id },
-            data: {
-                courseCode,
+            data: Object.assign(Object.assign({ courseCode,
                 courseName,
-                description,
-                units: Number(units),
-                department,
-                prerequisites: prerequisites || [],
-                maxCapacity,
-                day,
-                timeStart,
-                timeEnd,
-                room,
-                instructor,
-                semester,
-            },
+                description, units: Number(units), department, prerequisites: prerequisites || [], maxCapacity }, (schedules && { schedules: { set: schedules } })), { semester,
+                yearLevel }),
         });
         res.status(200).json({
             message: "Course updated successfully",

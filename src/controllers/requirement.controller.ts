@@ -56,7 +56,6 @@ export const createRequirement = async (req: Request, res: Response) => {
   }
 };
 
-// ✅ Get all requirements
 export const getAllRequirements = async (_: Request, res: Response) => {
   try {
     const requirements = await prisma.requirement.findMany({

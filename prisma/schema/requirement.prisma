@@ -1,7 +1,6 @@
-//requirement model -> studentReq & clearing officer
 model Requirement {
-  id             String                        @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String                        @db.ObjectId
+  id             String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String?             @db.ObjectId   // make optional
   courseCode     String
   courseName     String
   yearLevel      String
@@ -10,9 +9,9 @@ model Requirement {
   department     String
   dueDate        DateTime
   description    String
-  createdAt      DateTime                      @default(now())
-  updatedAt      DateTime                      @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
-  clearingOfficer        ClearingOfficer       @relation(fields: [userId], references: [id])
-  studentReq     StudentRequirement[]
+  clearingOfficer ClearingOfficer?   @relation(fields: [userId], references: [id])
+  studentReq      StudentRequirement[]
 }
