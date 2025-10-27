@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getAllStudentBySchoolId,
   updateClearingOfficerPassword,
   updateClearingOfficerProfile,
 } from "../controllers/intigration.controller";
@@ -18,5 +19,7 @@ router.put(
   authenticateToken,
   updateClearingOfficerPassword
 );
+
+router.get("/getAllStudentBySchoolId/:schoolId", getAllStudentBySchoolId);
 
 export default router;

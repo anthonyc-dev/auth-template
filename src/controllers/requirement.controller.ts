@@ -97,9 +97,6 @@ export const updateRequirement = async (req: Request, res: Response) => {
       return;
     }
 
-    // Optionally: Validate body fields here for better error messages
-
-    // Check if requirement exists before updating
     const existing = await prisma.requirement.findUnique({ where: { id } });
     if (!existing) {
       res.status(404).json({ error: "Requirement not found." });

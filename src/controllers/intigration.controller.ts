@@ -238,3 +238,53 @@ export const deleteClearingOfficer = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+export const getAllStudentBySchoolId = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+
+    if (!schoolId) {
+      res.status(400).json({
+        success: false,
+        message: "School ID parameter is required.",
+      });
+      return;
+    }
+
+    const students = await prisma.student.findMany({
+      where: { schoolId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        schoolId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNumber: true,
+        yearLevel: true,
+        // department: true,
+      },
+    });
+
+    if (students.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: `No students found for school ID '${schoolId}'.`,
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      count: students.length,
+      data: students,
+    });
+  } catch (error: any) {
+    console.error("❌ Error fetching students by schoolId:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+};
