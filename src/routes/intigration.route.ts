@@ -20,6 +20,10 @@ router.put(
   updateClearingOfficerPassword
 );
 
-router.get("/getAllStudentBySchoolId/:schoolId", getAllStudentBySchoolId);
+router.get(
+  "/getAllStudentBySchoolId/:schoolId",
+  authenticateToken,
+  getAllStudentBySchoolId
+);
 
 export default router;
