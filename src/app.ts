@@ -14,6 +14,7 @@ import enrollmentSectionRoute from "./routes/enrollment/enrollment-section.route
 import enrollmentRoutes from "./routes/enrollment/enrollment.routes";
 import enrollmentAuthRoute from "./routes/enrollment/enrollment-auth.route";
 import updatePass from "./routes/intigration.route";
+import studentRequirement from "./routes/studentRequirement.route";
 
 const app: Application = express();
 
@@ -59,6 +60,7 @@ app.use("/req", requirementReq);
 app.use("/student", studentRoutes);
 
 app.use("/updateUser", updatePass);
+app.use("/studentReq", studentRequirement);
 
 //routes for Enrollment Management System
 app.use("/enrollment-auth", enrollmentAuthRoute);

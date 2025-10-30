@@ -1,10 +1,11 @@
 //student requirement model
 model StudentRequirement {
   id              String                  @id @default(auto()) @map("_id") @db.ObjectId
-  studentId       String                  @db.ObjectId
-  requirementId   String                  @db.ObjectId
-  status          String                  @default("Pending")
-
-  student         Student                 @relation(fields: [studentId], references: [id])
-  requirement     Requirement             @relation(fields: [requirementId], references: [id])
+  studentId       String?                 @db.ObjectId
+  coId            String?                 @db.ObjectId
+  requirementId   String?                 @db.ObjectId
+  status          String                  @default("Incomplete")
+  clearingOfficer ClearingOfficer?        @relation(fields: [coId], references: [id])
+  student         Student?                @relation(fields: [studentId], references: [id])
+  requirement     Requirement?            @relation(fields: [requirementId], references: [id])
 }
