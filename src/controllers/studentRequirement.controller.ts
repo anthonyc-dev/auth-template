@@ -59,7 +59,7 @@ export const getAllStudentRequirements = async (
 ) => {
   try {
     const requirements = await prisma.studentRequirement.findMany({
-      include: { requirement: true, clearingOfficer: true, student: true },
+      include: { requirement: true, clearingOfficer: true },
     });
 
     res.status(200).json(requirements);
@@ -87,7 +87,7 @@ export const getStudentRequirementById = async (
 
     const requirement = await prisma.studentRequirement.findUnique({
       where: { id },
-      include: { requirement: true, clearingOfficer: true, student: true },
+      include: { requirement: true, clearingOfficer: true },
     });
 
     if (!requirement) {
@@ -104,31 +104,33 @@ export const getStudentRequirementById = async (
 
 export const updateStudentRequirement = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const { studentId } = req.params;
 
-    // Basic ID validation
-    if (!id || typeof id !== "string") {
-      res.status(400).json({ message: "Invalid or missing ID parameter" });
+    if (!studentId || typeof studentId !== "string") {
+      res
+        .status(400)
+        .json({ message: "Invalid or missing student ID parameter" });
       return;
     }
 
-    // Validation
     const errorMsg = validateStudentRequirementInput(req.body);
     if (errorMsg) {
       res.status(400).json({ message: errorMsg });
       return;
     }
 
-    const { studentId, coId, requirementId, status } = req.body;
+    const { coId, requirementId, status } = req.body;
 
-    const updatedRequirement = await prisma.studentRequirement.update({
-      where: { id },
-      data: {
-        studentId,
-        coId,
-        requirementId,
-        status,
-      },
+    // 🟢 If studentId is unique
+    // const updatedRequirement = await prisma.studentRequirement.update({
+    //   where: { studentId },
+    //   data: { coId, requirementId, status },
+    // });
+
+    // 🔵 If studentId is NOT unique
+    const updatedRequirement = await prisma.studentRequirement.updateMany({
+      where: { studentId },
+      data: { coId, requirementId, status },
     });
 
     res.status(200).json({
@@ -138,6 +140,7 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to update student requirement" });
+    return;
   }
 };
 

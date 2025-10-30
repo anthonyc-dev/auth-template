@@ -6,13 +6,30 @@ import {
   getStudentRequirementById,
   updateStudentRequirement,
 } from "../controllers/studentRequirement.controller";
+import { authenticateToken } from "../middlewares/authentication";
 
 const router = Router();
 
-router.post("/studentRequirement", createStudentRequirement);
-router.get("/getAllStudentRequirements", getAllStudentRequirements);
-router.get("/getRequirementById/:id", getStudentRequirementById);
-router.put("/updateStudentRequirement/:id", updateStudentRequirement);
-router.delete("/deleteStudentRequirement/:id", deleteStudentRequirement);
+router.post("/studentRequirement", authenticateToken, createStudentRequirement);
+router.get(
+  "/getAllStudentRequirements",
+  authenticateToken,
+  getAllStudentRequirements
+);
+router.get(
+  "/getRequirementById/:id",
+  authenticateToken,
+  getStudentRequirementById
+);
+router.put(
+  "/updateStudentRequirement/:studentId",
+  authenticateToken,
+  updateStudentRequirement
+);
+router.delete(
+  "/deleteStudentRequirement/:id",
+  authenticateToken,
+  deleteStudentRequirement
+);
 
 export default router;
