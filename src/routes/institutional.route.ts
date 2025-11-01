@@ -9,8 +9,8 @@ import {
 
 const router = Router();
 
-router.post("/createRequirement/", createRequirement);
-router.get("/getAllRequirements/", getAllRequirements);
+router.post("/createRequirement", createRequirement);
+router.get("/getAllRequirements", getAllRequirements);
 router.get("/getRequiremntById/:id", getRequirementById);
 router.put("/updateRequirement/:id", updateRequirement);
 router.delete("/deleteRequirement/:id", deleteRequirement);

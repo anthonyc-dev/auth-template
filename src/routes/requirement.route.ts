@@ -6,7 +6,10 @@ import {
   getRequirementById,
   updateRequirement,
 } from "../controllers/requirement.controller";
-import { authenticateToken } from "../middlewares/authentication";
+import {
+  authenticateToken,
+  authorizeRoles,
+} from "../middlewares/authentication";
 
 const router = Router();
 
@@ -14,7 +17,12 @@ const router = Router();
 router.post("/createReq", authenticateToken, createRequirement);
 router.get("/getAllReq", authenticateToken, getAllRequirements);
 router.get("/getByIdReq/:id", authenticateToken, getRequirementById);
-router.put("/updateReq/:id", authenticateToken, updateRequirement);
+router.put(
+  "/updateReq/:id",
+  authenticateToken,
+  authorizeRoles("clearingOfficer"),
+  updateRequirement
+);
 router.delete("/deleteReq/:id", authenticateToken, deleteRequirement);
 
 export default router;
