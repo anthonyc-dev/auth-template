@@ -1,0 +1,11 @@
+model InstitutionalRequirement {
+  id                  String                  @id @default(auto()) @map("_id") @db.ObjectId
+  institutionalName   String
+  requirements        String[]   
+  department          String?
+  description         String?
+  semester            String
+  deadline            DateTime
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+}

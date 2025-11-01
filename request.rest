@@ -1,15 +1,15 @@
 ###Register
-POST http://localhost:8080/auth/register
+POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
-    "schoolId": "33-3333",
-    "firstName": "Marjoe",
-    "lastName": "Bechayda",
-    "email": "marjoe@gmail.com",
+    "schoolId": "99-1234",
+    "firstName": "Sao",
+    "lastName": "User",
+    "email": "sao@gmail.com",
     "phoneNumber": "1234567890",
-    "password": "Marjoe@123",
-    "role": "student"
+    "password": "Saouser@123",
+    "role": "sao"
 }
 
 ###Login

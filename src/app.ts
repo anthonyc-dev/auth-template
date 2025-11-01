@@ -15,6 +15,7 @@ import enrollmentRoutes from "./routes/enrollment/enrollment.routes";
 import enrollmentAuthRoute from "./routes/enrollment/enrollment-auth.route";
 import updatePass from "./routes/intigration.route";
 import studentRequirement from "./routes/studentRequirement.route";
+import institutionalRoute from "./routes/institutional.route";
 
 const app: Application = express();
 
@@ -69,5 +70,8 @@ app.use("/semester-management", enrollmentSemesterRoute);
 app.use("/courses", enrollmentCourseRoute);
 app.use("/sections", enrollmentSectionRoute);
 app.use("/enroll", enrollmentRoutes);
+
+//institutional officer
+app.use("/institutional", institutionalRoute);
 
 export default app;
