@@ -5,6 +5,8 @@ model StudentRequirement {
   coId            String?                 @db.ObjectId
   requirementId   String?                 @db.ObjectId
   status          String                  @default("Incomplete")
+  signedBy        String?
+  
   clearingOfficer ClearingOfficer?        @relation(fields: [coId], references: [id])
   // student         Student?                @relation(fields: [studentId], references: [id])
   requirement     Requirement?            @relation(fields: [requirementId], references: [id])

@@ -32,13 +32,14 @@ export const createStudentRequirement = async (req: Request, res: Response) => {
       return;
     }
 
-    const { studentId, coId, requirementId, status } = req.body;
+    const { studentId, coId, requirementId, signedBy, status } = req.body;
 
     const newRequirement = await prisma.studentRequirement.create({
       data: {
         studentId,
         coId,
         requirementId,
+        signedBy,
         status: status || "Incomplete",
       },
     });
