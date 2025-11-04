@@ -13,6 +13,7 @@ export const createRequirement = async (req: Request, res: Response) => {
       description,
       semester,
       deadline,
+      postedBy,
     } = req.body;
 
     if (
@@ -35,6 +36,7 @@ export const createRequirement = async (req: Request, res: Response) => {
         description,
         semester,
         deadline: new Date(deadline),
+        postedBy,
       },
     });
 
@@ -50,6 +52,7 @@ export const getAllRequirements = async (_req: Request, res: Response) => {
   try {
     const requirements = await prisma.institutionalRequirement.findMany({
       orderBy: { createdAt: "desc" },
+      include: { clearingOfficer: true },
     });
     res.json(requirements);
   } catch (error) {
@@ -63,6 +66,7 @@ export const getRequirementById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const requirement = await prisma.institutionalRequirement.findUnique({
       where: { id },
+      include: { clearingOfficer: true },
     });
 
     if (!requirement) {

@@ -16,4 +16,5 @@ model ClearingOfficer {
   permits      Permit[]
   requirements Requirement[]
   studentReq  StudentRequirement[]
+  institutionalReq InstitutionalRequirement[]
 }
