@@ -17,8 +17,8 @@ POST http://localhost:3000/auth/login
 Content-Type: application/json
 
 {
-    "email": "user@gmail.com",
-    "password": "User@123"
+    "email": "sao@gmail.com",
+    "password": "Saouser@123"
 }
 
 ###Log out

@@ -114,7 +114,6 @@ export const register = async (req: Request, res: Response) => {
     }
   }
 };
-
 // ---- Login
 export const login = async (req: Request, res: Response) => {
   try {
@@ -158,6 +157,7 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         phoneNumber: user.phoneNumber,
         role: user.role,
+        profileImage: user.profileImage,
       },
       accessToken,
     });

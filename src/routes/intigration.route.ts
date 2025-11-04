@@ -5,6 +5,7 @@ import {
   updateClearingOfficerProfile,
 } from "../controllers/intigration.controller";
 import { authenticateToken } from "../middlewares/authentication";
+import { upload } from "../config/multer";
 
 const router = Router();
 
@@ -12,6 +13,7 @@ const router = Router();
 router.put(
   "/updateUserProfile/:id",
   authenticateToken,
+  upload.single("profileImage"),
   updateClearingOfficerProfile
 );
 router.put(

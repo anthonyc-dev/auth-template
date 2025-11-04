@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "../utils/cloudinaryUpload";
 
 const prisma = new PrismaClient();
 
@@ -31,6 +32,18 @@ export const createClearingOfficer = async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Handle profile image upload if provided
+    let profileImageUrl: string | undefined;
+    if (req.file) {
+      try {
+        profileImageUrl = await uploadImageToCloudinary(req.file, "clearing-officers");
+      } catch (uploadError) {
+        console.error("Profile image upload failed:", uploadError);
+        res.status(500).json({ message: "Failed to upload profile image" });
+        return;
+      }
+    }
+
     const clearingOfficer = await prisma.clearingOfficer.create({
       data: {
         schoolId,
@@ -40,6 +53,7 @@ export const createClearingOfficer = async (req: Request, res: Response) => {
         phoneNumber,
         password: hashedPassword,
         role: role || "clearingOfficer",
+        profileImage: profileImageUrl,
       },
     });
 
@@ -99,9 +113,30 @@ export const updateClearingOfficerProfile = async (
       email,
       phoneNumber,
     };
-    // if (password) {
-    //   updatedData.password = await bcrypt.hash(password, 10);
-    // }
+
+    // Handle profile image upload if provided
+    if (req.file) {
+      try {
+        // Upload new profile image
+        const newProfileImageUrl = await uploadImageToCloudinary(req.file, "clearing-officers");
+
+        // Delete old profile image if it exists
+        if (existingOfficer.profileImage) {
+          try {
+            await deleteImageFromCloudinary(existingOfficer.profileImage);
+          } catch (deleteError) {
+            console.error("Failed to delete old profile image:", deleteError);
+            // Continue with update even if deletion fails
+          }
+        }
+
+        updatedData.profileImage = newProfileImageUrl;
+      } catch (uploadError) {
+        console.error("Profile image upload failed:", uploadError);
+        res.status(500).json({ message: "Failed to upload profile image" });
+        return;
+      }
+    }
 
     const updatedOfficer = await prisma.clearingOfficer.update({
       where: { id },
