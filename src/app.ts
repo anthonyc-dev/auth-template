@@ -17,6 +17,7 @@ import updatePass from "./routes/intigration.route";
 import studentRequirement from "./routes/studentRequirement.route";
 import institutionalRoute from "./routes/institutional.route";
 import eventRoutes from "./routes/event.route";
+import setupClearance from "./routes/setupClearance.route";
 
 const app: Application = express();
 
@@ -60,6 +61,7 @@ app.use("/auth", clearingOfficer);
 app.use("/qr-code", qrCodeRoutes);
 app.use("/req", requirementReq);
 app.use("/student", studentRoutes);
+app.use("/clearance", setupClearance);
 
 app.use("/updateUser", updatePass);
 app.use("/studentReq", studentRequirement);

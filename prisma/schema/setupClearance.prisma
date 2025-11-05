@@ -1,0 +1,11 @@
+model SetUpClearance {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  isActive         Boolean           @default(false)
+  startDate        DateTime?
+  deadline         DateTime?
+  extendedDeadline DateTime?
+  semesterType     String
+  academicYear     String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
