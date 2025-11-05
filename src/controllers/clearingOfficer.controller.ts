@@ -281,7 +281,132 @@ export const getProfile = async (
   }
 };
 
-// ----Clearing officer endpoints
+// ✅ 1. Get All Clearing Officers CRUD -------------
+export const getAllClearingOfficers = async (req: Request, res: Response) => {
+  try {
+    const officers = await prisma.clearingOfficer.findMany({
+      select: {
+        id: true,
+        schoolId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNumber: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json(officers);
+  } catch (error) {
+    console.error("Get all error:", error);
+    res.status(500).json({ message: "Failed to retrieve clearing officers" });
+  }
+};
+
+// ✅ 2. Get Clearing Officer by ID
+export const getClearingOfficerByIds = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const officer = await prisma.clearingOfficer.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        schoolId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNumber: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    if (!officer) {
+      res.status(404).json({ message: "Clearing officer not found" });
+      return;
+    }
+
+    res.status(200).json(officer);
+  } catch (error) {
+    console.error("Get by ID error:", error);
+    res.status(500).json({ message: "Error retrieving clearing officer" });
+  }
+};
+
+// ✅ 3. Update Clearing Officer
+export const updateClearingOfficers = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, email, phoneNumber, password, role } =
+      req.body;
+
+    const existing = await prisma.clearingOfficer.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ message: "Clearing officer not found" });
+      return;
+    }
+
+    let hashedPassword: string | undefined;
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    const updatedOfficer = await prisma.clearingOfficer.update({
+      where: { id },
+      data: {
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        role,
+        ...(hashedPassword && { password: hashedPassword }),
+      },
+      select: {
+        id: true,
+        schoolId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phoneNumber: true,
+        role: true,
+        updatedAt: true,
+      },
+    });
+
+    res.status(200).json({
+      message: "Clearing officer updated successfully",
+      officer: updatedOfficer,
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ message: "Failed to update clearing officer" });
+  }
+};
+
+// ✅ 4. Delete Clearing Officer
+export const deleteClearingOfficers = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.clearingOfficer.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ message: "Clearing officer not found" });
+      return;
+    }
+
+    await prisma.clearingOfficer.delete({ where: { id } });
+
+    res.status(200).json({ message: "Clearing officer deleted successfully" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ message: "Failed to delete clearing officer" });
+  }
+};
+
+// ----Clearing officer endpoints managements----------
 //add clearing officer
 export const addClearingOfficer = async (req: Request, res: Response) => {
   try {
