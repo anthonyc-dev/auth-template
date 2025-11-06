@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createRequirement,
   deleteRequirement,
+  deleteRequirementsByCourseCode,
   getAllRequirements,
   getRequirementById,
   updateRequirement,
@@ -15,7 +16,7 @@ const router = Router();
 
 // requirements routes
 router.post("/createReq", authenticateToken, createRequirement);
-router.get("/getAllReq", authenticateToken, getAllRequirements);
+router.get("/getAllReq", getAllRequirements);
 router.get("/getByIdReq/:id", authenticateToken, getRequirementById);
 router.put(
   "/updateReq/:id",
@@ -23,6 +24,11 @@ router.put(
   authorizeRoles("clearingOfficer"),
   updateRequirement
 );
-router.delete("/deleteReq/:id", authenticateToken, deleteRequirement);
+router.delete("/deleteReq/:id", deleteRequirement);
+
+router.delete(
+  "/deleteByCourseCode/:courseCode",
+  deleteRequirementsByCourseCode
+);
 
 export default router;

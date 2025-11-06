@@ -151,3 +151,54 @@ export const deleteRequirement = async (req: Request, res: Response) => {
     }
   }
 };
+
+/**
+ * Delete all requirements associated with a given courseCode.
+ * Useful for batch removal of requirements for a specific course.
+ *
+ * Route: DELETE /deleteReqByCourse/:courseCode
+ *
+ * Security: Should be protected by appropriate authentication and authorization middleware in routes.
+ */
+export const deleteRequirementsByCourseCode = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { courseCode } = req.params;
+
+    // Validation: Ensure courseCode is provided
+    if (!courseCode) {
+      res
+        .status(400)
+        .json({ error: "courseCode is required in the URL parameter." });
+      return;
+    }
+
+    // Check how many requirements exist for the provided courseCode
+    const requirements = await prisma.requirement.findMany({
+      where: { courseCode },
+    });
+
+    if (requirements.length === 0) {
+      res
+        .status(404)
+        .json({
+          error: `No requirements found for courseCode '${courseCode}'.`,
+        });
+      return;
+    }
+
+    // Delete all associated requirements
+    const deleted = await prisma.requirement.deleteMany({
+      where: { courseCode },
+    });
+
+    res.status(200).json({
+      message: `Deleted ${deleted.count} requirement(s) for courseCode '${courseCode}'.`,
+      deletedCount: deleted.count,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
