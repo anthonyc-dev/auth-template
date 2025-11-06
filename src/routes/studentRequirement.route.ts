@@ -11,11 +11,7 @@ import { authenticateToken } from "../middlewares/authentication";
 const router = Router();
 
 router.post("/studentRequirement", authenticateToken, createStudentRequirement);
-router.get(
-  "/getAllStudentRequirements",
-  authenticateToken,
-  getAllStudentRequirements
-);
+router.get("/getAllStudentRequirements", getAllStudentRequirements);
 router.get(
   "/getRequirementById/:id",
   authenticateToken,
