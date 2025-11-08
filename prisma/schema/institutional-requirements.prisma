@@ -5,7 +5,7 @@ model InstitutionalRequirement {
   department          String?
   description         String?
   semester            String
-  deadline            DateTime
+  deadline            DateTime?
   postedBy            String?                  @db.ObjectId
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt

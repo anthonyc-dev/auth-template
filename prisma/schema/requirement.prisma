@@ -1,13 +1,13 @@
 model Requirement {
   id             String              @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String?             @db.ObjectId   // make optional
+  userId         String?             @db.ObjectId   
   courseCode     String
   courseName     String
   yearLevel      String
   semester       String
   requirements   String[]
   department     String
-  dueDate        DateTime
+  dueDate        DateTime?
   description    String
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt

@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { uploadImageToCloudinary, deleteImageFromCloudinary } from "../utils/cloudinaryUpload";
+import {
+  uploadImageToCloudinary,
+  deleteImageFromCloudinary,
+} from "../utils/cloudinaryUpload";
 
 const prisma = new PrismaClient();
 
@@ -36,7 +39,10 @@ export const createClearingOfficer = async (req: Request, res: Response) => {
     let profileImageUrl: string | undefined;
     if (req.file) {
       try {
-        profileImageUrl = await uploadImageToCloudinary(req.file, "clearing-officers");
+        profileImageUrl = await uploadImageToCloudinary(
+          req.file,
+          "clearing-officers"
+        );
       } catch (uploadError) {
         console.error("Profile image upload failed:", uploadError);
         res.status(500).json({ message: "Failed to upload profile image" });
@@ -118,7 +124,10 @@ export const updateClearingOfficerProfile = async (
     if (req.file) {
       try {
         // Upload new profile image
-        const newProfileImageUrl = await uploadImageToCloudinary(req.file, "clearing-officers");
+        const newProfileImageUrl = await uploadImageToCloudinary(
+          req.file,
+          "clearing-officers"
+        );
 
         // Delete old profile image if it exists
         if (existingOfficer.profileImage) {
