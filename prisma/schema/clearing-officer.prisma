@@ -17,4 +17,5 @@ model ClearingOfficer {
   requirements Requirement[]
   studentReq  StudentRequirement[]
   institutionalReq InstitutionalRequirement[]
+  studentInstitutionalReq StudentRequirementInstitutional[]
 }

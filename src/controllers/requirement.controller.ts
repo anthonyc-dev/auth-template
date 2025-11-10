@@ -61,6 +61,7 @@ interface UserRequirement {
 interface AuthRequest extends Request {
   user?: {
     userId: string;
+    role: string;
   };
 }
 
@@ -81,6 +82,16 @@ export const createRequirement = async (
     if (!userId) {
       res.status(401).json({
         error: "Unauthorized: No user ID found",
+        message: "Please login to continue",
+      });
+      return;
+    }
+
+    // Get user's role along with userId
+    const userRole = req.user?.role;
+    if (!userRole) {
+      res.status(401).json({
+        error: "Unauthorized: No user Role found",
         message: "Please login to continue",
       });
       return;
@@ -192,7 +203,7 @@ export const createRequirement = async (
           coId: userId,
           requirementId: requirement.id,
           status: "incomplete",
-          signedBy: "clearingOfficer",
+          signedBy: userRole,
         })),
       });
 
@@ -253,7 +264,7 @@ export const getRequirementById = async (req: Request, res: Response) => {
   try {
     const requirement = await prisma.requirement.findUnique({
       where: { id: req.params.id },
-      include: { studentReq: true },
+      // include: { studentReq: true },
     });
     if (!requirement) {
       res.status(404).json({ message: "Not found" });

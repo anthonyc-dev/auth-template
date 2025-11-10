@@ -7,7 +7,6 @@ model StudentRequirement {
   status          String                  @default("Incomplete")
   signedBy        String?
   
-  clearingOfficer ClearingOfficer?        @relation(fields: [coId], references: [id])
-  // student         Student?                @relation(fields: [studentId], references: [id])
-  requirement     Requirement?            @relation(fields: [requirementId], references: [id])
+  clearingOfficer        ClearingOfficer?        @relation(fields: [coId], references: [id])
+  officerRequirement     Requirement?            @relation(fields: [requirementId], references: [id])
 }

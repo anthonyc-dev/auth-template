@@ -34,7 +34,7 @@ export const createStudentRequirement = async (req: Request, res: Response) => {
 
     const { studentId, coId, requirementId, signedBy, status } = req.body;
 
-    const newRequirement = await prisma.studentRequirement.create({
+    const newRequirement = await prisma.studentRequirementInstitutional.create({
       data: {
         studentId,
         coId,
@@ -59,8 +59,8 @@ export const getAllStudentRequirements = async (
   res: Response
 ) => {
   try {
-    const requirements = await prisma.studentRequirement.findMany({
-      include: { officerRequirement: true, clearingOfficer: true },
+    const requirements = await prisma.studentRequirementInstitutional.findMany({
+      include: { institutionalRequirement: true, clearingOfficer: true },
     });
 
     res.status(200).json(requirements);
@@ -86,10 +86,12 @@ export const getStudentRequirementById = async (
       return;
     }
 
-    const requirement = await prisma.studentRequirement.findUnique({
-      where: { id },
-      include: { officerRequirement: true, clearingOfficer: true },
-    });
+    const requirement = await prisma.studentRequirementInstitutional.findUnique(
+      {
+        where: { id },
+        include: { institutionalRequirement: true, clearingOfficer: true },
+      }
+    );
 
     if (!requirement) {
       res.status(404).json({ message: "Student requirement not found" });
@@ -103,47 +105,6 @@ export const getStudentRequirementById = async (
   }
 };
 
-// export const updateStudentRequirement = async (req: Request, res: Response) => {
-//   try {
-//     const { studentId } = req.params;
-
-//     if (!studentId || typeof studentId !== "string") {
-//       res
-//         .status(400)
-//         .json({ message: "Invalid or missing student ID parameter" });
-//       return;
-//     }
-
-//     const errorMsg = validateStudentRequirementInput(req.body);
-//     if (errorMsg) {
-//       res.status(400).json({ message: errorMsg });
-//       return;
-//     }
-
-//     const { coId, requirementId, status } = req.body;
-
-//     // 🟢 If studentId is unique
-//     // const updatedRequirement = await prisma.studentRequirement.update({
-//     //   where: { studentId },
-//     //   data: { coId, requirementId, status },
-//     // });
-
-//     // 🔵 If studentId is NOT unique
-//     const updatedRequirement = await prisma.studentRequirement.updateMany({
-//       where: { studentId },
-//       data: { coId, requirementId, status },
-//     });
-
-//     res.status(200).json({
-//       message: "Student requirement updated successfully",
-//       data: updatedRequirement,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Failed to update student requirement" });
-//     return;
-//   }
-// };
 export const updateStudentRequirement = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;
@@ -163,23 +124,19 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
 
     const { coId, requirementId, status, signedBy } = req.body;
 
-    // Update a specific student requirement using all unique identifiers
-    const updatedRequirement = await prisma.studentRequirement.updateMany({
-      where: {
-        studentId,
-        coId,
-        requirementId,
-      },
-      data: {
-        status,
-        signedBy,
-      },
-    });
-
-    if (updatedRequirement.count === 0) {
-      res.status(404).json({ message: "Student requirement not found" });
-      return;
-    }
+    // 🔵 If studentId is NOT unique
+    const updatedRequirement =
+      await prisma.studentRequirementInstitutional.updateMany({
+        where: {
+          studentId,
+          coId,
+          requirementId,
+        },
+        data: {
+          status,
+          signedBy,
+        },
+      });
 
     res.status(200).json({
       message: "Student requirement updated successfully",
@@ -188,6 +145,7 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to update student requirement" });
+    return;
   }
 };
 
@@ -201,7 +159,7 @@ export const deleteStudentRequirement = async (req: Request, res: Response) => {
       return;
     }
 
-    await prisma.studentRequirement.delete({
+    await prisma.studentRequirementInstitutional.delete({
       where: { id },
     });
 

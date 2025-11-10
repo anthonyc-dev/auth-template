@@ -11,4 +11,5 @@ model InstitutionalRequirement {
   updatedAt           DateTime                 @updatedAt
 
   clearingOfficer     ClearingOfficer?     @relation(fields: [postedBy], references: [id])
+  studentReq      StudentRequirementInstitutional[]
 }

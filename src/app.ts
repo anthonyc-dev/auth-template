@@ -18,6 +18,7 @@ import studentRequirement from "./routes/studentRequirement.route";
 import institutionalRoute from "./routes/institutional.route";
 import eventRoutes from "./routes/event.route";
 import setupClearance from "./routes/setupClearance.route";
+import studentReqInstitutional from "./routes/studentReqInstitutional.route";
 
 const app: Application = express();
 
@@ -75,6 +76,7 @@ app.use("/sections", enrollmentSectionRoute);
 app.use("/enroll", enrollmentRoutes);
 
 app.use("/event", eventRoutes);
+app.use("/institutionalReq", studentReqInstitutional);
 
 //institutional officer
 app.use("/institutional", institutionalRoute);
