@@ -6,6 +6,7 @@ import {
   signAccessToken,
   signRefreshToken,
 } from "../libs/token";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -133,6 +134,37 @@ export const loginStudent = async (req: Request, res: Response) => {
   }
 };
 
+// Logout a student
+export const logoutStudent = async (req: Request, res: Response) => {
+  try {
+    const oldToken = req.cookies?.refreshToken;
+
+    if (oldToken) {
+      try {
+        const decoded: any = jwt.verify(
+          oldToken,
+          process.env.JWT_REFRESH_SECRET!
+        );
+        await prisma.clearingOfficer.update({
+          where: { id: decoded.userId },
+          data: { refreshToken: null },
+        });
+      } catch {}
+    }
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 // Get all students
 export const getStudents = async (req: Request, res: Response) => {
   try {
@@ -149,6 +181,24 @@ export const getStudentById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const student = await prisma.student.findUnique({
       where: { id },
+    });
+
+    if (!student) {
+      res.status(404).json({ message: "Student not found" });
+      return;
+    }
+    res.json(student);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get a student by school ID
+export const getStudentBySchoolId = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    const student = await prisma.student.findUnique({
+      where: { schoolId },
     });
 
     if (!student) {

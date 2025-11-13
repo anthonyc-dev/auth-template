@@ -105,6 +105,55 @@ export const getStudentRequirementById = async (
   }
 };
 
+/**
+ * Get all institutional student requirements for a given studentId
+ *
+ * Route: GET /studentRequirementInstitutional/byStudentId/:studentId
+ *
+ * Returns all records from studentRequirementInstitutional that match the given studentId,
+ * including institutionalRequirement and clearingOfficer details.
+ */
+export const getStudentRequirementsByStudentId = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { studentId } = req.params;
+
+    // Input validation for security
+    if (
+      !studentId ||
+      typeof studentId !== "string" ||
+      studentId.trim() === ""
+    ) {
+      res
+        .status(400)
+        .json({ message: "Invalid or missing studentId parameter" });
+      return;
+    }
+
+    const requirements = await prisma.studentRequirementInstitutional.findMany({
+      where: { studentId },
+      include: {
+        institutionalRequirement: true,
+        clearingOfficer: true,
+      },
+    });
+
+    res.status(200).json(requirements);
+  } catch (error: any) {
+    console.error(
+      "❌ Error in getStudentRequirementsByStudentId:",
+      error.message
+    );
+    res.status(500).json({
+      message:
+        error.message ||
+        "Failed to fetch institutional student requirements by studentId",
+    });
+  }
+};
+
 export const updateStudentRequirement = async (req: Request, res: Response) => {
   try {
     const { studentId } = req.params;

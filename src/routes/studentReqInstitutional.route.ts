@@ -6,6 +6,7 @@ import {
   deleteStudentRequirement,
   getAllStudentRequirements,
   getStudentRequirementById,
+  getStudentRequirementsByStudentId,
   updateStudentRequirement,
 } from "../controllers/studentReqInstitutional.controller";
 
@@ -18,6 +19,11 @@ router.get(
   authenticateToken,
   getStudentRequirementById
 );
+router.get(
+  "/getStudentRequirementsByStudentId/:studentId",
+  getStudentRequirementsByStudentId
+);
+
 router.put(
   "/updateStudentRequirement/:studentId",
   authenticateToken,

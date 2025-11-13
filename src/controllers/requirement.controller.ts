@@ -105,7 +105,6 @@ export const createRequirement = async (
       semester,
       requirements,
       department,
-      dueDate,
       description,
     }: UserRequirement = req.body;
 
@@ -116,8 +115,7 @@ export const createRequirement = async (
       !yearLevel ||
       !semester ||
       !requirements ||
-      !department ||
-      !dueDate
+      !department
     ) {
       res.status(400).json({
         error: "Missing required fields",
@@ -128,7 +126,6 @@ export const createRequirement = async (
           "semester",
           "requirements",
           "department",
-          "dueDate",
         ],
       });
       return;
@@ -153,7 +150,6 @@ export const createRequirement = async (
           semester,
           requirements,
           department,
-          dueDate: new Date(dueDate),
           description,
         },
       });

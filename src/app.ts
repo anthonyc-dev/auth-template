@@ -3,6 +3,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import path from "path";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import clearingOfficer from "./routes/clearingOfficer.route";
 import qrCodeRoutes from "./routes/qrCode.route";
 import requirementReq from "./routes/requirement.route";
@@ -19,6 +21,7 @@ import institutionalRoute from "./routes/institutional.route";
 import eventRoutes from "./routes/event.route";
 import setupClearance from "./routes/setupClearance.route";
 import studentReqInstitutional from "./routes/studentReqInstitutional.route";
+import createNotif from "./routes/notification.route";
 
 const app: Application = express();
 
@@ -28,20 +31,50 @@ app.set("views", path.join(__dirname, "../views"));
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: [
-      process.env.FRONT_END_URL || "",
-      process.env.FRONT_END_URL_2 || "",
-      process.env.FRONT_END_URL_3 || "",
-      process.env.FRONT_END_URL_4 || "",
-      "http://localhost:5173",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors());
+
+// {
+//   origin: [
+//     process.env.FRONT_END_URL || "",
+//     process.env.FRONT_END_URL_2 || "",
+//     process.env.FRONT_END_URL_3 || "",
+//     process.env.FRONT_END_URL_4 || "",
+//     "http://localhost:5173",
+//     "http://localhost:60036/",
+//   ],
+//   credentials: true,
+// }
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+//webSocket middleware
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: "*", credentials: true },
+});
+
+// userId → socketId
+const userSockets = new Map<string, string>();
+
+io.on("connection", (socket) => {
+  console.log("⚡ Client connected:", socket.id);
+
+  socket.on("register", (userId: string) => {
+    userSockets.set(userId, socket.id);
+    console.log(`✅ Registered user ${userId}`);
+  });
+
+  socket.on("disconnect", () => {
+    for (const [uid, sid] of userSockets.entries()) {
+      if (sid === socket.id) userSockets.delete(uid);
+    }
+  });
+});
+
+export const sendNotification = async (userId: string, data: any) => {
+  const socketId = userSockets.get(userId);
+  if (socketId) io.to(socketId).emit("notification", data);
+};
 
 // Health check endpoint
 app.get("/health", (_req: Request, res: Response): void => {
@@ -80,5 +113,6 @@ app.use("/institutionalReq", studentReqInstitutional);
 
 //institutional officer
 app.use("/institutional", institutionalRoute);
+app.use("/notif", createNotif);
 
 export default app;

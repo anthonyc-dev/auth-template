@@ -12,7 +12,6 @@ export const createRequirement = async (req: Request, res: Response) => {
       department,
       description,
       semester,
-      deadline,
       postedBy,
     } = req.body;
 
@@ -21,8 +20,7 @@ export const createRequirement = async (req: Request, res: Response) => {
       !Array.isArray(requirements) ||
       requirements.length === 0 ||
       !department ||
-      !semester ||
-      !deadline
+      !semester
     ) {
       res.status(400).json({ message: "Missing required fields" });
       return;
@@ -35,7 +33,6 @@ export const createRequirement = async (req: Request, res: Response) => {
         department,
         description,
         semester,
-        deadline: new Date(deadline),
         postedBy,
       },
     });
@@ -90,7 +87,6 @@ export const updateRequirement = async (req: Request, res: Response) => {
       department,
       description,
       semester,
-      deadline,
     } = req.body;
 
     const updated = await prisma.institutionalRequirement.update({
@@ -101,7 +97,6 @@ export const updateRequirement = async (req: Request, res: Response) => {
         department,
         description,
         semester,
-        deadline: deadline ? new Date(deadline) : undefined,
       },
     });
 

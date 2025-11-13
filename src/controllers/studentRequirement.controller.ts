@@ -103,6 +103,52 @@ export const getStudentRequirementById = async (
   }
 };
 
+/**
+ * Get all student requirements by schoolId
+ *
+ * Route: GET /studentRequirement/bySchoolId/:schoolId
+ *
+ * This controller fetches all studentRequirement records that match a given schoolId.
+ *
+ * Security: Validate `schoolId` is a non-empty string to prevent improper queries.
+ *
+ * Example usage:
+ *   GET /studentRequirement/bySchoolId/202200123
+ */
+export const getStudentRequirementsBySchoolId = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { schoolId } = req.params;
+
+    // Basic validation
+    if (!schoolId || typeof schoolId !== "string" || schoolId.trim() === "") {
+      res
+        .status(400)
+        .json({ message: "Invalid or missing schoolId parameter" });
+      return;
+    }
+
+    // Query student requirements by schoolId
+    const studentRequirements = await prisma.studentRequirement.findMany({
+      where: { studentId: schoolId },
+      include: { officerRequirement: true, clearingOfficer: true },
+    });
+
+    res.status(200).json(studentRequirements);
+  } catch (error: any) {
+    console.error(
+      "❌ Error in getStudentRequirementsBySchoolId:",
+      error.message
+    );
+    res.status(500).json({
+      message:
+        error.message || "Failed to fetch student requirements by schoolId",
+    });
+  }
+};
+
 // export const updateStudentRequirement = async (req: Request, res: Response) => {
 //   try {
 //     const { studentId } = req.params;
