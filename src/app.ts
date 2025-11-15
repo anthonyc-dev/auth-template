@@ -39,6 +39,7 @@ app.use(
       process.env.FRONT_END_URL_3 || "",
       process.env.FRONT_END_URL_4 || "",
       "http://localhost:5173",
+      process.env.DATA_INTIGRATION_API || "",
     ],
     credentials: true,
   })
