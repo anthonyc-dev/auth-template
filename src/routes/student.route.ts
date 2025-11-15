@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  changeStudentPassword,
   deleteStudent,
   getStudentById,
   getStudentBySchoolId,
@@ -22,6 +23,7 @@ router.post("/logoutStudent", logoutStudent);
 router.get("/getAllStudent", getStudents);
 router.get("/getByIdStudent/:id", getStudentById);
 router.get("/getStudentBySchoolId/:schoolId", getStudentBySchoolId);
+router.post("/changeStudentPassword", changeStudentPassword);
 router.put("/updateStudent/:id", updateStudent);
 router.delete("/deleteStudent/:id", deleteStudent);
 

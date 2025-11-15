@@ -177,10 +177,10 @@ export const createRequirement = async (
         const { prerequisites } = student;
 
         if (Array.isArray(prerequisites)) {
-          return prerequisites.includes(courseCode); // ✅ handle string[]
+          return prerequisites.includes(courseCode);
         }
 
-        return prerequisites === courseCode; // ✅ handle string
+        return prerequisites === courseCode;
       });
 
       if (assignedStudents.length === 0) {
