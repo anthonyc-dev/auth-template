@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import cron from "node-cron";
 import axiosInstance from "../config/axios";
+import { sendBulkSMS } from "../services/sms.service";
 
 const prisma = new PrismaClient();
 
@@ -139,7 +140,7 @@ export const createRequirement = async (
     }
 
     // 3. Transaction for consistency
-    const result = await prisma.$transaction(async (tx) => {
+    const transactionResult = await prisma.$transaction(async (tx) => {
       // Create requirement
       const requirement = await tx.requirement.create({
         data: {
@@ -167,6 +168,7 @@ export const createRequirement = async (
         return {
           requirement,
           assignedCount: 0,
+          assignedStudentIds: [] as string[],
           warning:
             "Requirement created, but failed to fetch student enrollments from external API",
         };
@@ -187,6 +189,7 @@ export const createRequirement = async (
         return {
           requirement,
           assignedCount: 0,
+          assignedStudentIds: [] as string[],
           message:
             "Requirement created, but no students enrolled in this course.",
         };
@@ -206,11 +209,85 @@ export const createRequirement = async (
       return {
         requirement,
         assignedCount: studentRequirements.count,
+        assignedStudentIds: assignedStudents.map((s) => s.schoolId),
         message: `Requirement created and assigned to ${studentRequirements.count} students.`,
       };
     });
 
-    // 4. Send success response
+    // 4. Prepare response object with SMS notification
+    const result: typeof transactionResult & {
+      smsNotification?: {
+        sent: number;
+        failed: number;
+        total: number;
+        warning?: string;
+        error?: string;
+      };
+    } = { ...transactionResult };
+
+    // 5. Send SMS notifications to assigned students (non-blocking)
+    if (result.assignedCount > 0 && result.assignedStudentIds?.length > 0) {
+      try {
+        // Fetch student phone numbers
+        const students = await prisma.student.findMany({
+          where: {
+            schoolId: { in: result.assignedStudentIds },
+          },
+          select: {
+            schoolId: true,
+            firstName: true,
+            lastName: true,
+            phoneNumber: true,
+          },
+        });
+
+        // Filter out students without phone numbers
+        const studentsWithPhones = students.filter(
+          (s) => s.phoneNumber && s.phoneNumber.trim() !== ""
+        );
+
+        if (studentsWithPhones.length > 0) {
+          // Create personalized SMS message
+          const requirementsList = requirements.join(", ");
+          const message = `Hello! You have new clearance requirements for ${courseCode} - ${courseName}. Required: ${requirementsList}. Please complete them in the clearance system.`;
+
+          // Send SMS to all students
+          const smsResults = await sendBulkSMS({
+            recipients: studentsWithPhones.map((s) => s.phoneNumber!),
+            message: message,
+          });
+
+          // Add SMS results to response
+          result.smsNotification = {
+            sent: smsResults.successCount,
+            failed: smsResults.failureCount,
+            total: smsResults.total,
+          };
+
+          console.log(
+            `📱 SMS notifications: ${smsResults.successCount}/${smsResults.total} sent successfully`
+          );
+        } else {
+          result.smsNotification = {
+            sent: 0,
+            failed: 0,
+            total: 0,
+            warning: "No students with valid phone numbers found",
+          };
+        }
+      } catch (smsError) {
+        // Log error but don't fail the request
+        console.error("⚠️ Failed to send SMS notifications:", smsError);
+        result.smsNotification = {
+          sent: 0,
+          failed: 0,
+          total: 0,
+          error: "Failed to send SMS notifications",
+        };
+      }
+    }
+
+    // 6. Send success response
     res.status(201).json(result);
   } catch (error) {
     console.error("❌ Error creating requirement:", error);

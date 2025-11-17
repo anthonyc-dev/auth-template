@@ -22,6 +22,7 @@ import eventRoutes from "./routes/event.route";
 import setupClearance from "./routes/setupClearance.route";
 import studentReqInstitutional from "./routes/studentReqInstitutional.route";
 import createNotif from "./routes/notification.route";
+import sendSMSRoutes from "./routes/send-sms.route";
 
 const app: Application = express();
 
@@ -31,19 +32,7 @@ app.set("views", path.join(__dirname, "../views"));
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: [
-      process.env.FRONT_END_URL || "",
-      process.env.FRONT_END_URL_2 || "",
-      process.env.FRONT_END_URL_3 || "",
-      process.env.FRONT_END_URL_4 || "",
-      "http://localhost:5173",
-      process.env.DATA_INTIGRATION_API || "",
-    ],
-    credentials: true,
-  })
-);
+app.use(cors());
 
 // {
 //   origin: [
@@ -125,5 +114,8 @@ app.use("/institutionalReq", studentReqInstitutional);
 //institutional officer
 app.use("/institutional", institutionalRoute);
 app.use("/notif", createNotif);
+
+//sms
+app.use("/sms", sendSMSRoutes);
 
 export default app;

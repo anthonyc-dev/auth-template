@@ -1,7 +1,92 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { sendBulkSMS } from "../services/sms.service";
 
 const prisma = new PrismaClient();
+
+/**
+ * Helper function to send SMS notifications to all students with requirements
+ * @param message - The SMS message to send
+ * @returns Promise with SMS results
+ */
+const notifyStudentsWithRequirements = async (message: string) => {
+  try {
+    // Get all student IDs who have requirements assigned
+    const studentRequirements = await prisma.studentRequirement.findMany({
+      select: {
+        studentId: true,
+      },
+    });
+
+    // Extract unique student IDs using Set
+    const uniqueStudentIds = new Set<string>();
+    studentRequirements.forEach((sr) => {
+      if (sr.studentId) {
+        uniqueStudentIds.add(sr.studentId);
+      }
+    });
+
+    const studentIds = Array.from(uniqueStudentIds);
+
+    if (studentIds.length === 0) {
+      return {
+        successCount: 0,
+        failureCount: 0,
+        total: 0,
+        message: "No students with requirements found",
+      };
+    }
+
+    // Fetch student phone numbers
+    const students = await prisma.student.findMany({
+      where: {
+        schoolId: { in: studentIds },
+      },
+      select: {
+        schoolId: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+      },
+    });
+
+    // Filter out students without phone numbers
+    const studentsWithPhones = students.filter(
+      (s) => s.phoneNumber && s.phoneNumber.trim() !== ""
+    );
+
+    if (studentsWithPhones.length === 0) {
+      return {
+        successCount: 0,
+        failureCount: 0,
+        total: 0,
+        message: "No students with valid phone numbers found",
+      };
+    }
+
+    // Send SMS to all students
+    const smsResults = await sendBulkSMS({
+      recipients: studentsWithPhones.map((s) => s.phoneNumber!),
+      message: message,
+    });
+
+    return {
+      successCount: smsResults.successCount,
+      failureCount: smsResults.failureCount,
+      total: smsResults.total,
+      message: `SMS sent to ${smsResults.successCount}/${smsResults.total} students`,
+    };
+  } catch (error) {
+    console.error("⚠️ Error in notifyStudentsWithRequirements:", error);
+    return {
+      successCount: 0,
+      failureCount: 0,
+      total: 0,
+      message: "Failed to send SMS notifications",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+};
 
 // Create a new clearance setup
 export const setupClearance = async (req: Request, res: Response) => {
@@ -64,6 +149,25 @@ export const startClearance = async (req: Request, res: Response) => {
       },
     });
 
+    // Send SMS notifications to all students with requirements (non-blocking)
+    const deadlineDate = clearance.extendedDeadline || clearance.deadline;
+    const deadlineText = deadlineDate
+      ? new Date(deadlineDate).toLocaleDateString()
+      : "TBA";
+
+    const smsMessage = `Clearance has started! Please complete your clearance requirements. Deadline: ${deadlineText}. Login to the clearance system to view your requirements.`;
+
+    // Send SMS asynchronously (don't wait for it)
+    notifyStudentsWithRequirements(smsMessage)
+      .then((result) => {
+        console.log(
+          `📱 Start Clearance SMS: ${result.successCount}/${result.total} sent successfully`
+        );
+      })
+      .catch((error) => {
+        console.error("⚠️ Failed to send start clearance SMS:", error);
+      });
+
     res.status(200).json({
       message: "Clearance started successfully",
       clearance,
@@ -83,6 +187,20 @@ export const stopClearance = async (req: Request, res: Response) => {
       where: { id },
       data: { isActive: false },
     });
+
+    // Send SMS notifications to all students with requirements (non-blocking)
+    const smsMessage = `Clearance has been stopped. Please contact the administration for more information.`;
+
+    // Send SMS asynchronously (don't wait for it)
+    notifyStudentsWithRequirements(smsMessage)
+      .then((result) => {
+        console.log(
+          `📱 Stop Clearance SMS: ${result.successCount}/${result.total} sent successfully`
+        );
+      })
+      .catch((error) => {
+        console.error("⚠️ Failed to send stop clearance SMS:", error);
+      });
 
     res.status(200).json({
       message: "Clearance stopped successfully",
@@ -112,10 +230,24 @@ export const extendDeadline = async (req: Request, res: Response) => {
       },
     });
 
+    const newDeadlineDate = new Date(newDeadline).toLocaleDateString();
+
+    // Send SMS notifications to all students with requirements (non-blocking)
+    const smsMessage = `Clearance deadline has been extended to ${newDeadlineDate}. Please complete your requirements before the new deadline.`;
+
+    // Send SMS asynchronously (don't wait for it)
+    notifyStudentsWithRequirements(smsMessage)
+      .then((result) => {
+        console.log(
+          `📱 Extend Deadline SMS: ${result.successCount}/${result.total} sent successfully`
+        );
+      })
+      .catch((error) => {
+        console.error("⚠️ Failed to send extend deadline SMS:", error);
+      });
+
     res.status(200).json({
-      message: `Deadline extended to ${new Date(
-        newDeadline
-      ).toLocaleDateString()}`,
+      message: `Deadline extended to ${newDeadlineDate}`,
       clearance,
     });
   } catch (error: any) {

@@ -64,6 +64,11 @@ export const validateRegister = (
       "registrar",
       "dean",
       "sao",
+      "cashier",
+      "laboratory",
+      "library",
+      "tailoring",
+      "guidance",
     ];
     if (!validRoles.includes(role)) {
       res.status(400).json({
