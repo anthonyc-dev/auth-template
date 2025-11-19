@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { sendNotification } from "../app";
 
 const prisma = new PrismaClient();
 
@@ -22,8 +21,8 @@ export const createNotification = async (req: Request, res: Response) => {
   });
 
   // Send in real-time
-  await sendNotification(clearingOfficerId, notifData);
-  await sendNotification(studentId, notifData);
+  // await sendNotification(clearingOfficerId, notifData);
+  // await sendNotification(studentId, notifData);
 
   res.json({ success: true });
 };

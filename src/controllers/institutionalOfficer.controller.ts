@@ -112,6 +112,11 @@ export const deleteRequirement = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
+    // Also delete associated StudentRequirements when a Requirement is deleted.
+    await prisma.studentRequirementInstitutional.deleteMany({
+      where: { requirementId: id },
+    });
+
     await prisma.institutionalRequirement.delete({ where: { id } });
 
     res.json({ message: "Requirement deleted successfully" });

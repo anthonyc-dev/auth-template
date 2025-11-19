@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import cron from "node-cron";
 import axiosInstance from "../config/axios";
 import { sendBulkSMS } from "../services/sms.service";
+import { io } from "../app";
 
 const prisma = new PrismaClient();
 
@@ -206,6 +207,8 @@ export const createRequirement = async (
         })),
       });
 
+      io.emit("requirement:created", studentRequirements);
+
       return {
         requirement,
         assignedCount: studentRequirements.count,
@@ -405,7 +408,13 @@ export const deleteRequirement = async (req: Request, res: Response) => {
       return;
     }
 
+    // Also delete associated StudentRequirements when a Requirement is deleted.
+    await prisma.studentRequirement.deleteMany({
+      where: { requirementId: id },
+    });
+
     await prisma.requirement.delete({ where: { id } });
+
     res.status(200).json({ message: "Requirement deleted successfully." });
   } catch (err: any) {
     // Handle Prisma record not found error

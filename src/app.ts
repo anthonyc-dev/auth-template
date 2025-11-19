@@ -3,8 +3,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import path from "path";
-import { createServer } from "http";
 import { Server } from "socket.io";
+import http from "http";
 import clearingOfficer from "./routes/clearingOfficer.route";
 import qrCodeRoutes from "./routes/qrCode.route";
 import requirementReq from "./routes/requirement.route";
@@ -58,34 +58,27 @@ app.use(
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-//webSocket middleware
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: { origin: "*", credentials: true },
+// HTTP server wrapper (important for socket.io)
+const server = http.createServer(app);
+
+// SOCKET.IO INITIALIZATION
+const io = new Server(server, {
+  cors: {
+    origin: "*", // allow any frontend (Flutter/React/Next.js)
+  },
 });
 
-// userId → socketId
-const userSockets = new Map<string, string>();
-
+// ON CLIENT CONNECT
 io.on("connection", (socket) => {
-  console.log("⚡ Client connected:", socket.id);
+  console.log("Client connected:", socket.id);
 
-  socket.on("register", (userId: string) => {
-    userSockets.set(userId, socket.id);
-    console.log(`✅ Registered user ${userId}`);
-  });
-
+  // custom events if needed
   socket.on("disconnect", () => {
-    for (const [uid, sid] of userSockets.entries()) {
-      if (sid === socket.id) userSockets.delete(uid);
-    }
+    console.log("Client disconnected:", socket.id);
   });
 });
 
-export const sendNotification = async (userId: string, data: any) => {
-  const socketId = userSockets.get(userId);
-  if (socketId) io.to(socketId).emit("notification", data);
-};
+export { io };
 
 // Health check endpoint
 app.get("/health", (_req: Request, res: Response): void => {
