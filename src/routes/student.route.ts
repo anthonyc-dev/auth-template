@@ -10,6 +10,7 @@ import {
   registerStudent,
   updateStudent,
   updateStudentProfile,
+  updateStudentProfileImage,
 } from "../controllers/student.controller";
 import {
   studentValidateRegister,
@@ -33,6 +34,12 @@ router.put(
   "/updateStudentProfile/:schoolId",
   upload.single("profileImage"),
   updateStudentProfile
+);
+
+router.put(
+  "/updateStudentProfileImage/:schoolId",
+  upload.single("profileImage"),
+  updateStudentProfileImage
 );
 
 export default router;

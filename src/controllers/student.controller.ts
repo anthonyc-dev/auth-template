@@ -391,21 +391,12 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
       return;
     }
 
-    // Only include fields that are actually provided
-    let updatedData: any = {};
-
-    if (firstName !== undefined && firstName !== null) {
-      updatedData.firstName = firstName;
-    }
-    if (lastName !== undefined && lastName !== null) {
-      updatedData.lastName = lastName;
-    }
-    if (email !== undefined && email !== null) {
-      updatedData.email = email;
-    }
-    if (phoneNumber !== undefined && phoneNumber !== null) {
-      updatedData.phoneNumber = phoneNumber;
-    }
+    let updatedData: any = {
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+    };
 
     // Handle profile image upload if provided
     if (req.file) {
@@ -434,12 +425,6 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
       }
     }
 
-    // Only update if there are fields to update
-    if (Object.keys(updatedData).length === 0) {
-      res.status(400).json({ message: "No fields to update" });
-      return;
-    }
-
     const updatedStudent = await prisma.student.update({
       where: { schoolId },
       data: updatedData,
@@ -453,3 +438,86 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+/**
+ * Update only the profile image of a student by schoolId.
+ *
+ * Route: PUT /updateStudentProfileImage/:schoolId
+ * Accepts a multipart/form-data with "profileImage" as the file key.
+ * Returns: Updated student info with a success message, or error.
+ */
+export const updateStudentProfileImage = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { schoolId } = req.params;
+
+    // Fetch the existing student
+    const existingStudent = await prisma.student.findUnique({
+      where: { schoolId },
+    });
+
+    if (!existingStudent) {
+      res.status(404).json({ message: "Student not found" });
+      return;
+    }
+
+    // Check if file was uploaded
+    if (!req.file) {
+      res.status(400).json({ message: "No profile image file provided" });
+      return;
+    }
+
+    // Upload new profile image
+    let newProfileImageUrl: string;
+    try {
+      newProfileImageUrl = await uploadImageToCloudinary(
+        req.file,
+        "student-profile"
+      );
+    } catch (uploadError) {
+      console.error("Profile image upload failed:", uploadError);
+      res.status(500).json({ message: "Failed to upload profile image" });
+      return;
+    }
+
+    // Delete old profile image if it exists (optional cleanup)
+    if (existingStudent.profileImage) {
+      try {
+        await deleteImageFromCloudinary(existingStudent.profileImage);
+      } catch (deleteError) {
+        console.warn("Failed to delete old profile image:", deleteError);
+        // Continue even if deletion fails to avoid blocking the action
+      }
+    }
+
+    // Update only the profileImage field in the database
+    const updatedStudent = await prisma.student.update({
+      where: { schoolId },
+      data: {
+        profileImage: newProfileImageUrl,
+      },
+    });
+
+    res.json({
+      message: "Profile image updated successfully",
+      updatedStudent,
+    });
+  } catch (error: any) {
+    console.error("Error updating profile image:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+    return;
+  }
+};
+/*
+  Next Steps:
+  - Add a route in your router (e.g. student.route.ts):
+      router.put(
+        "/updateStudentProfileImage/:schoolId",
+        upload.single("profileImage"),
+        updateStudentProfileImage
+      );
+  - Test with tools like Postman to ensure the update works as expected.
+  - Optional: Add input validation, file size/type restrictions, and stricter error handling.
+*/
