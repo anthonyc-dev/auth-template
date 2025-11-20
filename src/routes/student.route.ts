@@ -9,11 +9,13 @@ import {
   logoutStudent,
   registerStudent,
   updateStudent,
+  updateStudentProfile,
 } from "../controllers/student.controller";
 import {
   studentValidateRegister,
   validateLogin,
 } from "../middlewares/auth.validator";
+import { upload } from "../config/multer";
 
 const router = Router();
 
@@ -26,5 +28,11 @@ router.get("/getStudentBySchoolId/:schoolId", getStudentBySchoolId);
 router.post("/changeStudentPassword", changeStudentPassword);
 router.put("/updateStudent/:id", updateStudent);
 router.delete("/deleteStudent/:id", deleteStudent);
+
+router.put(
+  "/updateStudentProfile/:id",
+  upload.single("profileImage"),
+  updateStudentProfile
+);
 
 export default router;

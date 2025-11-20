@@ -8,6 +8,10 @@ import {
 } from "../libs/token";
 import jwt from "jsonwebtoken";
 import axiosInstance from "../config/axios";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+} from "../utils/cloudinaryUpload";
 
 const prisma = new PrismaClient();
 
@@ -371,5 +375,66 @@ export const changeStudentPassword = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Password change error:", error); // For debugging
     res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+export const updateStudentProfile = async (req: Request, res: Response) => {
+  try {
+    const { schoolId } = req.params;
+    const { firstName, lastName, email, phoneNumber } = req.body;
+
+    const existingStudent = await prisma.student.findUnique({
+      where: { schoolId },
+    });
+    if (!existingStudent) {
+      res.status(404).json({ message: "Student not found" });
+      return;
+    }
+
+    let updatedData: any = {
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+    };
+
+    // Handle profile image upload if provided
+    if (req.file) {
+      try {
+        // Upload new profile image
+        const newProfileImageUrl = await uploadImageToCloudinary(
+          req.file,
+          "student-profile"
+        );
+
+        // Delete old profile image if it exists
+        if (existingStudent.profileImage) {
+          try {
+            await deleteImageFromCloudinary(existingStudent.profileImage);
+          } catch (deleteError) {
+            console.error("Failed to delete old profile image:", deleteError);
+            // Continue with update even if deletion fails
+          }
+        }
+
+        updatedData.profileImage = newProfileImageUrl;
+      } catch (uploadError) {
+        console.error("Profile image upload failed:", uploadError);
+        res.status(500).json({ message: "Failed to upload profile image" });
+        return;
+      }
+    }
+
+    const updatedStudent = await prisma.student.update({
+      where: { schoolId },
+      data: updatedData,
+    });
+
+    res.json({
+      message: "Student updated successfully",
+      updatedStudent,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
   }
 };

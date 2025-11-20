@@ -33,16 +33,7 @@ app.set("views", path.join(__dirname, "../views"));
 app.use(express.json());
 app.use(cookieParser());
 app.use(
-  cors({
-    origin: [
-      process.env.FRONT_END_URL || "",
-      process.env.FRONT_END_URL_2 || "",
-      process.env.FRONT_END_URL_3 || "",
-      process.env.FRONT_END_URL_4 || "",
-      "http://localhost:5173",
-    ],
-    credentials: true,
-  })
+  cors()
 );
 
 // {
