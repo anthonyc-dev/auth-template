@@ -207,6 +207,7 @@ export const createRequirement = async (
         })),
       });
 
+      //real-time using socket.io
       io.emit("requirement:created", studentRequirements);
 
       return {
