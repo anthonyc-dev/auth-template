@@ -30,7 +30,7 @@ router.put("/updateStudent/:id", updateStudent);
 router.delete("/deleteStudent/:id", deleteStudent);
 
 router.put(
-  "/updateStudentProfile/:id",
+  "/updateStudentProfile/:schoolId",
   upload.single("profileImage"),
   updateStudentProfile
 );
