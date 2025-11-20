@@ -391,12 +391,21 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
       return;
     }
 
-    let updatedData: any = {
-      firstName,
-      lastName,
-      email,
-      phoneNumber,
-    };
+    // Only include fields that are actually provided
+    let updatedData: any = {};
+
+    if (firstName !== undefined && firstName !== null) {
+      updatedData.firstName = firstName;
+    }
+    if (lastName !== undefined && lastName !== null) {
+      updatedData.lastName = lastName;
+    }
+    if (email !== undefined && email !== null) {
+      updatedData.email = email;
+    }
+    if (phoneNumber !== undefined && phoneNumber !== null) {
+      updatedData.phoneNumber = phoneNumber;
+    }
 
     // Handle profile image upload if provided
     if (req.file) {
@@ -423,6 +432,12 @@ export const updateStudentProfile = async (req: Request, res: Response) => {
         res.status(500).json({ message: "Failed to upload profile image" });
         return;
       }
+    }
+
+    // Only update if there are fields to update
+    if (Object.keys(updatedData).length === 0) {
+      res.status(400).json({ message: "No fields to update" });
+      return;
     }
 
     const updatedStudent = await prisma.student.update({
