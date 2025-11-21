@@ -64,9 +64,14 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "*",
-    methods: "GET,POST,PUT,DELETE",
-    allowedHeaders: "Content-Type, Authorization",
+    origin: [
+      process.env.FRONT_END_URL || "",
+      process.env.FRONT_END_URL_2 || "",
+      process.env.FRONT_END_URL_3 || "",
+      process.env.FRONT_END_URL_4 || "",
+      "http://localhost:5173",
+    ],
+    credentials: true,
   })
 );
 
