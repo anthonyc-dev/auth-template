@@ -26,8 +26,38 @@ import sendSMSRoutes from "./routes/send-sms.route";
 
 const app: Application = express();
 
+//ejs
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../views"));
+app.use("/student", studentRoutes);
+
+//rooutes for ASCS
+app.use("/auth", clearingOfficer);
+app.use("/qr-code", qrCodeRoutes);
+app.use("/req", requirementReq);
+
+app.use("/clearance", setupClearance);
+
+app.use("/updateUser", updatePass);
+app.use("/studentReq", studentRequirement);
+
+//routes for Enrollment Management System
+app.use("/enrollment-auth", enrollmentAuthRoute);
+app.use("/student-management", enrollmentStudentManagementRoute);
+app.use("/semester-management", enrollmentSemesterRoute);
+app.use("/courses", enrollmentCourseRoute);
+app.use("/sections", enrollmentSectionRoute);
+app.use("/enroll", enrollmentRoutes);
+
+app.use("/event", eventRoutes);
+app.use("/institutionalReq", studentReqInstitutional);
+
+//institutional officer
+app.use("/institutional", institutionalRoute);
+app.use("/notif", createNotif);
+
+//sms
+app.use("/sms", sendSMSRoutes);
 
 // Middleware
 app.use(express.json());
@@ -88,33 +118,5 @@ app.get("/health", (_req: Request, res: Response): void => {
 app.get("/", (_req: Request, res: Response): void => {
   res.render("index");
 });
-
-//rooutes for ASCS
-app.use("/auth", clearingOfficer);
-app.use("/qr-code", qrCodeRoutes);
-app.use("/req", requirementReq);
-app.use("/student", studentRoutes);
-app.use("/clearance", setupClearance);
-
-app.use("/updateUser", updatePass);
-app.use("/studentReq", studentRequirement);
-
-//routes for Enrollment Management System
-app.use("/enrollment-auth", enrollmentAuthRoute);
-app.use("/student-management", enrollmentStudentManagementRoute);
-app.use("/semester-management", enrollmentSemesterRoute);
-app.use("/courses", enrollmentCourseRoute);
-app.use("/sections", enrollmentSectionRoute);
-app.use("/enroll", enrollmentRoutes);
-
-app.use("/event", eventRoutes);
-app.use("/institutionalReq", studentReqInstitutional);
-
-//institutional officer
-app.use("/institutional", institutionalRoute);
-app.use("/notif", createNotif);
-
-//sms
-app.use("/sms", sendSMSRoutes);
 
 export default app;

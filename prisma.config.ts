@@ -1,5 +1,6 @@
-import { defineConfig } from "prisma/config";
-
-export default defineConfig({
+export default {
   schema: "./prisma/schema",
-});
+  datasource: {
+    url: process.env.DATABASE_URL!, // your connection string
+  },
+};
