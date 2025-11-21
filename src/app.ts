@@ -8,7 +8,6 @@ import http from "http";
 import clearingOfficer from "./routes/clearingOfficer.route";
 import qrCodeRoutes from "./routes/qrCode.route";
 import requirementReq from "./routes/requirement.route";
-import studentRoutes from "./routes/student.route";
 import enrollmentStudentManagementRoute from "./routes/enrollment/enrollment-student-management.route";
 import enrollmentSemesterRoute from "./routes/enrollment/enrollment-semester.route";
 import enrollmentCourseRoute from "./routes/enrollment/enrollment-addCourse.route";
@@ -30,7 +29,6 @@ const app: Application = express();
 //ejs
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../views"));
-app.use("/student", studentRoutes);
 
 // Middleware
 app.use(express.json());

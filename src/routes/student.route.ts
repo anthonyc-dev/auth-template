@@ -20,12 +20,6 @@ import { upload } from "../config/multer";
 
 const router = Router();
 
-router.put(
-  "/updateStudentProfileImage/:schoolId",
-  upload.single("profileImage"),
-  updateStudentProfileImage
-);
-
 router.post("/registerStudent", studentValidateRegister, registerStudent);
 router.post("/loginStudent", validateLogin, loginStudent);
 router.post("/logoutStudent", logoutStudent);
@@ -35,6 +29,12 @@ router.get("/getStudentBySchoolId/:schoolId", getStudentBySchoolId);
 router.post("/changeStudentPassword", changeStudentPassword);
 router.put("/updateStudent/:id", updateStudent);
 router.delete("/deleteStudent/:id", deleteStudent);
+
+router.put(
+  "/updateStudentProfileImage/:schoolId",
+  upload.single("profileImage"),
+  updateStudentProfileImage
+);
 
 // router.put(
 //   "/updateStudentProfile/:schoolId",
