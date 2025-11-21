@@ -23,6 +23,7 @@ import setupClearance from "./routes/setupClearance.route";
 import studentReqInstitutional from "./routes/studentReqInstitutional.route";
 import createNotif from "./routes/notification.route";
 import sendSMSRoutes from "./routes/send-sms.route";
+import studenController from "./routes/student.route";
 
 const app: Application = express();
 
@@ -102,7 +103,7 @@ app.use("/qr-code", qrCodeRoutes);
 app.use("/req", requirementReq);
 
 app.use("/clearance", setupClearance);
-
+app.use("/student", studenController);
 app.use("/updateUser", updatePass);
 app.use("/studentReq", studentRequirement);
 
