@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec \"ts-node\" src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc -p .",
+    "build": "tsc",
     "prisma:clean": "rimraf node_modules/.prisma && rimraf prisma/generated",
     "prisma:clean:force": "taskkill /f /im node.exe 2>nul || echo No node processes to kill && rimraf node_modules/.prisma && rimraf prisma/generated",
     "prisma:generate": "npm run prisma:clean:force && prisma generate --schema=./prisma/schema",

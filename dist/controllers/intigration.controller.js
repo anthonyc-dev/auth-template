@@ -12,9 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteClearingOfficer = exports.updateClearingOfficerPassword = exports.updateClearingOfficerProfile = exports.getClearingOfficerById = exports.getAllClearingOfficers = exports.createClearingOfficer = void 0;
+exports.getAllStudentBySchoolId = exports.deleteClearingOfficer = exports.updateClearingOfficerPassword = exports.updateClearingOfficerProfile = exports.getClearingOfficerById = exports.getAllClearingOfficers = exports.createClearingOfficer = void 0;
 const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const cloudinaryUpload_1 = require("../utils/cloudinaryUpload");
 const prisma = new client_1.PrismaClient();
 const createClearingOfficer = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -31,6 +32,18 @@ const createClearingOfficer = (req, res) => __awaiter(void 0, void 0, void 0, fu
             return;
         }
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
+        // Handle profile image upload if provided
+        let profileImageUrl;
+        if (req.file) {
+            try {
+                profileImageUrl = yield (0, cloudinaryUpload_1.uploadImageToCloudinary)(req.file, "clearing-officers");
+            }
+            catch (uploadError) {
+                console.error("Profile image upload failed:", uploadError);
+                res.status(500).json({ message: "Failed to upload profile image" });
+                return;
+            }
+        }
         const clearingOfficer = yield prisma.clearingOfficer.create({
             data: {
                 schoolId,
@@ -40,6 +53,7 @@ const createClearingOfficer = (req, res) => __awaiter(void 0, void 0, void 0, fu
                 phoneNumber,
                 password: hashedPassword,
                 role: role || "clearingOfficer",
+                profileImage: profileImageUrl,
             },
         });
         res.status(201).json({
@@ -95,9 +109,29 @@ const updateClearingOfficerProfile = (req, res) => __awaiter(void 0, void 0, voi
             email,
             phoneNumber,
         };
-        // if (password) {
-        //   updatedData.password = await bcrypt.hash(password, 10);
-        // }
+        // Handle profile image upload if provided
+        if (req.file) {
+            try {
+                // Upload new profile image
+                const newProfileImageUrl = yield (0, cloudinaryUpload_1.uploadImageToCloudinary)(req.file, "clearing-officers");
+                // Delete old profile image if it exists
+                if (existingOfficer.profileImage) {
+                    try {
+                        yield (0, cloudinaryUpload_1.deleteImageFromCloudinary)(existingOfficer.profileImage);
+                    }
+                    catch (deleteError) {
+                        console.error("Failed to delete old profile image:", deleteError);
+                        // Continue with update even if deletion fails
+                    }
+                }
+                updatedData.profileImage = newProfileImageUrl;
+            }
+            catch (uploadError) {
+                console.error("Profile image upload failed:", uploadError);
+                res.status(500).json({ message: "Failed to upload profile image" });
+                return;
+            }
+        }
         const updatedOfficer = yield prisma.clearingOfficer.update({
             where: { id },
             data: updatedData,
@@ -203,3 +237,50 @@ const deleteClearingOfficer = (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 });
 exports.deleteClearingOfficer = deleteClearingOfficer;
+const getAllStudentBySchoolId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { schoolId } = req.params;
+        if (!schoolId) {
+            res.status(400).json({
+                success: false,
+                message: "School ID parameter is required.",
+            });
+            return;
+        }
+        const students = yield prisma.student.findMany({
+            where: { schoolId },
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                schoolId: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phoneNumber: true,
+                yearLevel: true,
+                // department: true,
+            },
+        });
+        if (students.length === 0) {
+            res.status(404).json({
+                success: false,
+                message: `No students found for school ID '${schoolId}'.`,
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            count: students.length,
+            data: students,
+        });
+    }
+    catch (error) {
+        console.error("❌ Error fetching students by schoolId:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error.",
+            error: error.message,
+        });
+    }
+});
+exports.getAllStudentBySchoolId = getAllStudentBySchoolId;

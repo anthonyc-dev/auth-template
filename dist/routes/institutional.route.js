@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const institutionalOfficer_controller_1 = require("../controllers/institutionalOfficer.controller");
+const router = (0, express_1.Router)();
+router.post("/createRequirement", institutionalOfficer_controller_1.createRequirement);
+router.get("/getAllRequirements", institutionalOfficer_controller_1.getAllRequirements);
+router.get("/getRequiremntById/:id", institutionalOfficer_controller_1.getRequirementById);
+router.put("/updateRequirement/:id", institutionalOfficer_controller_1.updateRequirement);
+router.delete("/deleteRequirement/:id", institutionalOfficer_controller_1.deleteRequirement);
+exports.default = router;

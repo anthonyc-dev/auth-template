@@ -15,7 +15,16 @@ router.get("/profile", authentication_1.authenticateToken, (0, authentication_1.
 router.post("/refresh-token", clearingOfficer_controller_1.refreshToken);
 // Logout route
 router.post("/logout", authentication_1.authenticateToken, clearingOfficer_controller_1.logout);
-//--------- Clearing officer routes
+//---Clearing officer
+// Display all
+router.get("/getAllClearingOfficers", clearingOfficer_controller_1.getAllClearingOfficers);
+// Display by ID
+router.get("/getAllClearingOfficerbyId/:id", clearingOfficer_controller_1.getClearingOfficerByIds);
+// Update
+router.put("/updateClearingOfficers/:id", clearingOfficer_controller_1.updateClearingOfficers);
+// Delete
+router.delete("/deleteClearingOfficer/:id", clearingOfficer_controller_1.deleteClearingOfficers);
+//--------- Clearing officer routes EMS
 router.post("/createCo", clearingOfficer_controller_1.addClearingOfficer);
 router.get("/getAllCo", clearingOfficer_controller_1.getClearingOfficers);
 router.get("/getCoById/:id", clearingOfficer_controller_1.getClearingOfficerById);
