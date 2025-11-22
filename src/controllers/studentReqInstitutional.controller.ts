@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { io } from "../app";
+import { generateQRCodeForStudent } from "./qrCode.controller";
 
 const prisma = new PrismaClient();
 
@@ -241,6 +242,7 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
 
     // Check if clearing officer is cashier and status is "signed"
     let canGenerateQR = false;
+    let qrData = null;
     if (
       clearingOfficer.role.toLowerCase() === "cashier" &&
       status.toLowerCase() === "signed"
@@ -270,6 +272,16 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       );
 
       canGenerateQR = allStudentReqSigned && allNonCashierReqSigned;
+
+      // Auto-generate QR code if all requirements are signed
+      if (canGenerateQR) {
+        try {
+          qrData = await generateQRCodeForStudent(coId, studentId);
+        } catch (error) {
+          console.error("Error auto-generating QR:", error);
+          // Continue with the update even if QR generation fails
+        }
+      }
     }
 
     // Emit real-time update via Socket.IO
@@ -281,6 +293,7 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       signedBy,
       updatedData,
       canGenerateQR,
+      qrGenerated: !!qrData,
       timestamp: new Date().toISOString(),
     });
 
@@ -288,6 +301,8 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       message: "Student requirement updated successfully",
       data: updatedRequirement,
       canGenerateQR,
+      qrGenerated: !!qrData,
+      qrData: qrData || undefined,
     });
   } catch (error) {
     console.error(error);

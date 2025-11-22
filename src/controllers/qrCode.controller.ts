@@ -14,7 +14,129 @@ interface PermitTokenPayload extends JwtPayload {
   userId: string;
 }
 
-// Officer signs permit & generate QR
+// Helper function to generate QR code (can be called internally)
+export const generateQRCodeForStudent = async (
+  cashierId: string,
+  studentId: string
+) => {
+  try {
+    // Ensure clearing officer exists and is cashier
+    const clearingOfficer = await prisma.clearingOfficer.findUnique({
+      where: { id: cashierId },
+    });
+
+    if (!clearingOfficer || clearingOfficer.role.toLowerCase() !== "cashier") {
+      throw new Error("Only cashier can generate QR codes");
+    }
+
+    // Check all student requirements from studentRequirement table
+    const studentRequirements = await prisma.studentRequirement.findMany({
+      where: { studentId },
+    });
+
+    const allStudentReqSigned = studentRequirements.every(
+      (req) => req.status.toLowerCase() === "signed"
+    );
+
+    // Check all institutional student requirements EXCEPT cashier's own requirement
+    const institutionalRequirements =
+      await prisma.studentRequirementInstitutional.findMany({
+        where: { studentId },
+      });
+
+    // Filter out cashier's own requirement
+    const nonCashierRequirements = institutionalRequirements.filter(
+      (req) => req.coId !== cashierId
+    );
+
+    const allNonCashierReqSigned = nonCashierRequirements.every(
+      (req) => req.status.toLowerCase() === "signed"
+    );
+
+    // Verify all requirements (except cashier's) are signed
+    if (!allStudentReqSigned || !allNonCashierReqSigned) {
+      throw new Error("Not all requirements are signed");
+    }
+
+    // Update cashier's own requirement to "signed" when generating QR
+    await prisma.studentRequirementInstitutional.updateMany({
+      where: {
+        studentId,
+        coId: cashierId,
+      },
+      data: {
+        status: "signed",
+        signedBy: clearingOfficer.firstName + " " + clearingOfficer.lastName,
+      },
+    });
+
+    // Fetch the updated cashier requirement for socket emission
+    const updatedCashierReq =
+      await prisma.studentRequirementInstitutional.findFirst({
+        where: {
+          studentId,
+          coId: cashierId,
+        },
+        include: {
+          institutionalRequirement: true,
+          clearingOfficer: true,
+        },
+      });
+
+    // Emit real-time update for cashier's requirement
+    io.emit("institutional:studentRequirementUpdated", {
+      studentId,
+      coId: cashierId,
+      requirementId: updatedCashierReq?.requirementId,
+      status: "signed",
+      signedBy: clearingOfficer.firstName + " " + clearingOfficer.lastName,
+      updatedData: updatedCashierReq,
+      canGenerateQR: true,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Create permit
+    const permit = await prisma.permit.create({
+      data: {
+        userId: cashierId,
+        studentId: studentId,
+        permitCode: `PERMIT-${Date.now()}`,
+        status: "active",
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      },
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { permitId: permit.id, userId: permit.userId },
+      SECRET,
+      { expiresIn: "30d" }
+    );
+
+    // Generate QR URL
+    const qrUrl = `${FRONTEND_URL}/viewPermit/?token=${token}`;
+
+    // Generate QR image for that URL
+    const qrImage = await QRCode.toDataURL(qrUrl);
+
+    // Emit real-time QR generation event via Socket.IO
+    io.emit("qr:generated", {
+      studentId,
+      cashierId: cashierId,
+      permit,
+      qrImage,
+      token,
+      timestamp: new Date().toISOString(),
+    });
+
+    return { permit, qrImage, token };
+  } catch (error) {
+    console.error("Error generating QR:", error);
+    throw error;
+  }
+};
+
+// Officer signs permit & generate QR (API endpoint)
 export const generateQR = async (
   req: Request,
   res: Response
@@ -33,146 +155,16 @@ export const generateQR = async (
       return;
     }
 
-    // Ensure clearing officer exists and is cashier
-    const clearingOfficer = await prisma.clearingOfficer.findUnique({
-      where: { id: userId },
-    });
-
-    if (!clearingOfficer) {
-      res.status(404).json({ error: "Clearing officer not found" });
-      return;
-    }
-
-    if (clearingOfficer.role.toLowerCase() !== "cashier") {
-      res.status(403).json({ error: "Only cashier can generate QR codes" });
-      return;
-    }
-
-    // Check all student requirements from studentRequirement table
-    const studentRequirements = await prisma.studentRequirement.findMany({
-      where: { studentId },
-    });
-
-    const allStudentReqSigned = studentRequirements.every(
-      (req) => req.status.toLowerCase() === "signed"
-    );
-
-    // Check all institutional student requirements EXCEPT cashier's own requirement
-    const institutionalRequirements =
-      await prisma.studentRequirementInstitutional.findMany({
-        where: { studentId },
-      });
-
-    // Filter out cashier's own requirement - cashier can generate QR even if their own req isn't signed
-    const nonCashierRequirements = institutionalRequirements.filter(
-      (req) => req.coId !== userId
-    );
-
-    const allNonCashierReqSigned = nonCashierRequirements.every(
-      (req) => req.status.toLowerCase() === "signed"
-    );
-
-    // Verify all requirements (except cashier's) are signed
-    if (!allStudentReqSigned || !allNonCashierReqSigned) {
-      res.status(400).json({
-        error: "Cannot generate QR code: Not all requirements are signed",
-        studentRequirementsSigned: allStudentReqSigned,
-        institutionalRequirementsSigned: allNonCashierReqSigned,
-        pendingRequirements: {
-          studentRequirements: studentRequirements.filter(
-            (req) => req.status.toLowerCase() !== "signed"
-          ),
-          studentRequirementInstitutional: nonCashierRequirements.filter(
-            (req) => req.status.toLowerCase() !== "signed"
-          ),
-        },
-      });
-      return;
-    }
-
-    // Update cashier's own requirement to "signed" when generating QR
-    await prisma.studentRequirementInstitutional.updateMany({
-      where: {
-        studentId,
-        coId: userId, // Cashier's own requirement
-      },
-      data: {
-        status: "signed",
-        signedBy: clearingOfficer.firstName + " " + clearingOfficer.lastName,
-      },
-    });
-
-    // Fetch the updated cashier requirement for socket emission
-    const updatedCashierReq =
-      await prisma.studentRequirementInstitutional.findFirst({
-        where: {
-          studentId,
-          coId: userId,
-        },
-        include: {
-          institutionalRequirement: true,
-          clearingOfficer: true,
-        },
-      });
-
-    // Emit real-time update for cashier's requirement
-    io.emit("institutional:studentRequirementUpdated", {
-      studentId,
-      coId: userId,
-      requirementId: updatedCashierReq?.requirementId,
-      status: "signed",
-      signedBy: clearingOfficer.firstName + " " + clearingOfficer.lastName,
-      updatedData: updatedCashierReq,
-      canGenerateQR: true,
-      timestamp: new Date().toISOString(),
-    });
-
-    // Create permit
-    const permit = await prisma.permit.create({
-      data: {
-        userId: userId,
-        studentId: studentId,
-        permitCode: `PERMIT-${Date.now()}`,
-        status: "active",
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-      },
-    });
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { permitId: permit.id, userId: permit.userId },
-      SECRET,
-      { expiresIn: "30d" }
-    );
-
-    // // Generate QR image from token
-    // const qrImage = await QRCode.toDataURL(token);
-
-    // 👇 Instead of encoding token, we encode a frontend URL with token query param
-    const qrUrl = `${FRONTEND_URL}/viewPermit/?token=${token}`;
-
-    // Generate QR image for that URL
-    const qrImage = await QRCode.toDataURL(qrUrl);
-
-    // Emit real-time QR generation event via Socket.IO
-    io.emit("qr:generated", {
-      studentId,
-      cashierId: userId,
-      permit,
-      qrImage, // Add this line
-      token, // Optional: you can also include the token
-      timestamp: new Date().toISOString(),
-    });
+    // Use the helper function
+    const result = await generateQRCodeForStudent(userId, studentId);
 
     res.json({
       message: "Permit signed & QR generated",
-      permit,
-      qrImage,
-      token,
+      ...result,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating QR:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: error.message || "Internal server error" });
   }
 };
 
