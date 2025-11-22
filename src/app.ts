@@ -23,6 +23,7 @@ import studentReqInstitutional from "./routes/studentReqInstitutional.route";
 import createNotif from "./routes/notification.route";
 import sendSMSRoutes from "./routes/send-sms.route";
 import studenController from "./routes/student.route";
+import getStudentPermit from "./routes/qrCode.route";
 
 const app: Application = express();
 
@@ -36,6 +37,7 @@ app.use(cookieParser());
 app.use(
   cors({
     origin: [
+      process.env.DATA_INTIGRATION_API || "",
       process.env.FRONT_END_URL || "",
       process.env.FRONT_END_URL_2 || "",
       process.env.FRONT_END_URL_3 || "",
@@ -66,6 +68,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: [
+      process.env.DATA_INTIGRATION_API || "",
       process.env.FRONT_END_URL || "",
       process.env.FRONT_END_URL_2 || "",
       process.env.FRONT_END_URL_3 || "",
@@ -131,6 +134,7 @@ app.use("/notif", createNotif);
 
 //sms
 app.use("/sms", sendSMSRoutes);
+app.use("/permit", getStudentPermit);
 
 export default server; // Export HTTP server, not Express app
 export { app, io };

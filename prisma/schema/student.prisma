@@ -15,4 +15,5 @@ model Student {
   updatedAt    DateTime               @updatedAt
 
   // studentReq  StudentRequirement[]
+  studentPermit Permit[]
 }

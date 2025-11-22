@@ -174,6 +174,16 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
 
     const { coId, requirementId, status, signedBy } = req.body;
 
+    // Get clearing officer details to check role
+    const clearingOfficer = await prisma.clearingOfficer.findUnique({
+      where: { id: coId },
+    });
+
+    if (!clearingOfficer) {
+      res.status(404).json({ message: "Clearing officer not found" });
+      return;
+    }
+
     // 🔵 If studentId is NOT unique
     const updatedRequirement =
       await prisma.studentRequirementInstitutional.updateMany({
@@ -194,17 +204,73 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
     }
 
     // Fetch the updated requirement to get complete data for socket emission
-    const updatedData = await prisma.studentRequirement.findFirst({
+    const updatedData = await prisma.studentRequirementInstitutional.findFirst({
       where: {
         studentId,
         coId,
         requirementId,
       },
       include: {
-        officerRequirement: true,
+        institutionalRequirement: true,
         clearingOfficer: true,
       },
     });
+
+    // Check if status is not "signed" - if so, revoke any active permits for this student
+    if (status.toLowerCase() !== "signed") {
+      const revokedPermits = await prisma.permit.updateMany({
+        where: {
+          studentId,
+          status: "active",
+        },
+        data: {
+          status: "revoked",
+        },
+      });
+
+      if (revokedPermits.count > 0) {
+        // Emit revocation event
+        io.emit("qr:revoked", {
+          studentId,
+          reason: "Institutional requirement status changed to incomplete",
+          revokedBy: coId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Check if clearing officer is cashier and status is "signed"
+    let canGenerateQR = false;
+    if (
+      clearingOfficer.role.toLowerCase() === "cashier" &&
+      status.toLowerCase() === "signed"
+    ) {
+      // Check all student requirements from studentRequirement
+      const studentRequirements = await prisma.studentRequirement.findMany({
+        where: { studentId },
+      });
+
+      const allStudentReqSigned = studentRequirements.every(
+        (req) => req.status.toLowerCase() === "signed"
+      );
+
+      // Check all institutional student requirements EXCEPT cashier's own
+      const institutionalRequirements =
+        await prisma.studentRequirementInstitutional.findMany({
+          where: { studentId },
+        });
+
+      // Filter out cashier's own requirement - cashier can generate QR even if their own req isn't signed
+      const nonCashierRequirements = institutionalRequirements.filter(
+        (req) => req.coId !== coId
+      );
+
+      const allNonCashierReqSigned = nonCashierRequirements.every(
+        (req) => req.status.toLowerCase() === "signed"
+      );
+
+      canGenerateQR = allStudentReqSigned && allNonCashierReqSigned;
+    }
 
     // Emit real-time update via Socket.IO
     io.emit("institutional:studentRequirementUpdated", {
@@ -214,12 +280,14 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       status,
       signedBy,
       updatedData,
+      canGenerateQR,
       timestamp: new Date().toISOString(),
     });
 
     res.status(200).json({
       message: "Student requirement updated successfully",
       data: updatedRequirement,
+      canGenerateQR,
     });
   } catch (error) {
     console.error(error);
@@ -238,8 +306,55 @@ export const deleteStudentRequirement = async (req: Request, res: Response) => {
       return;
     }
 
+    // Fetch the requirement data before deletion
+    const requirementToDelete =
+      await prisma.studentRequirementInstitutional.findUnique({
+        where: { id },
+        include: {
+          institutionalRequirement: true,
+          clearingOfficer: true,
+        },
+      });
+
+    if (!requirementToDelete) {
+      res.status(404).json({ message: "Student requirement not found" });
+      return;
+    }
+
     await prisma.studentRequirementInstitutional.delete({
       where: { id },
+    });
+
+    // Revoke any active permits for this student since a requirement was deleted
+    if (requirementToDelete.studentId) {
+      const revokedPermits = await prisma.permit.updateMany({
+        where: {
+          studentId: requirementToDelete.studentId,
+          status: "active",
+        },
+        data: {
+          status: "revoked",
+        },
+      });
+
+      if (revokedPermits.count > 0) {
+        // Emit revocation event
+        io.emit("qr:revoked", {
+          studentId: requirementToDelete.studentId,
+          reason: "Institutional requirement was deleted",
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Emit real-time delete event via Socket.IO
+    io.emit("institutional:requirement:deleted", {
+      id,
+      studentId: requirementToDelete.studentId,
+      coId: requirementToDelete.coId,
+      requirementId: requirementToDelete.requirementId,
+      deletedData: requirementToDelete,
+      timestamp: new Date().toISOString(),
     });
 
     res

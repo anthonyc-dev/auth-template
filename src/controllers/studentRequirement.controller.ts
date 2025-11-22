@@ -123,7 +123,7 @@ export const getStudentRequirementsBySchoolId = async (
   try {
     const { schoolId } = req.params;
 
-    // Basic validation
+    // Input validation
     if (!schoolId || typeof schoolId !== "string" || schoolId.trim() === "") {
       res
         .status(400)
@@ -241,6 +241,29 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       },
     });
 
+    // Check if status is not "signed" - if so, revoke any active permits for this student
+    if (status.toLowerCase() !== "signed") {
+      const revokedPermits = await prisma.permit.updateMany({
+        where: {
+          studentId,
+          status: "active",
+        },
+        data: {
+          status: "revoked",
+        },
+      });
+
+      if (revokedPermits.count > 0) {
+        // Emit revocation event
+        io.emit("qr:revoked", {
+          studentId,
+          reason: "Requirement status changed to incomplete",
+          revokedBy: coId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
     // Emit real-time update via Socket.IO
     io.emit("studentRequirementUpdated", {
       studentId,
@@ -289,6 +312,28 @@ export const deleteStudentRequirement = async (req: Request, res: Response) => {
     await prisma.studentRequirement.delete({
       where: { id },
     });
+
+    // Revoke any active permits for this student since a requirement was deleted
+    if (requirementToDelete.studentId) {
+      const revokedPermits = await prisma.permit.updateMany({
+        where: {
+          studentId: requirementToDelete.studentId,
+          status: "active",
+        },
+        data: {
+          status: "revoked",
+        },
+      });
+
+      if (revokedPermits.count > 0) {
+        // Emit revocation event
+        io.emit("qr:revoked", {
+          studentId: requirementToDelete.studentId,
+          reason: "Student requirement was deleted",
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
 
     // Emit real-time delete event via Socket.IO
     io.emit("requirement:deleted", {

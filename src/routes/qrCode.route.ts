@@ -4,6 +4,7 @@ import {
   generateQR,
   viewPermit,
   revokePermit,
+  getPermit,
 } from "../controllers/qrCode.controller";
 
 const router = Router();
@@ -12,5 +13,6 @@ const router = Router();
 router.post("/generate-qr/:userId", generateQR);
 router.post("/view-permit", viewPermit);
 router.post("/revoke-permit/:permitId", revokePermit);
+router.get("/student/:studentId", getPermit);
 
 export default router;

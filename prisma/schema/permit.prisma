@@ -2,11 +2,13 @@
 model Permit {
   id         String              @id @default(auto()) @map("_id") @db.ObjectId
   userId     String              @db.ObjectId
+  studentId  String              
   permitCode String              @unique
   expiresAt  DateTime
   status     String              @default("active")
   createdAt  DateTime            @default(now())
 
   user       ClearingOfficer     @relation(fields: [userId], references: [id])
+  student    Student             @relation(fields: [studentId], references: [schoolId])
   @@map("permits")
 }
