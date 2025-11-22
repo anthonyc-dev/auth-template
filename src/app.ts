@@ -65,8 +65,19 @@ const server = http.createServer(app);
 // SOCKET.IO INITIALIZATION
 const io = new Server(server, {
   cors: {
-    origin: "*", // allow any frontend (Flutter/React/Next.js)
+    origin: [
+      process.env.FRONT_END_URL || "",
+      process.env.FRONT_END_URL_2 || "",
+      process.env.FRONT_END_URL_3 || "",
+      process.env.FRONT_END_URL_4 || "",
+      "http://localhost:5173",
+      "*", // Allow all for mobile (or specify your mobile app URL)
+    ],
+    credentials: true,
+    methods: ["GET", "POST"],
   },
+  transports: ["websocket", "polling"], // Support both transports
+  allowEIO3: true, // Support older Engine.IO clients
 });
 
 // ON CLIENT CONNECT
@@ -78,8 +89,6 @@ io.on("connection", (socket) => {
     console.log("Client disconnected:", socket.id);
   });
 });
-
-export { io };
 
 // Health check endpoint
 app.get("/health", (_req: Request, res: Response): void => {
@@ -123,4 +132,5 @@ app.use("/notif", createNotif);
 //sms
 app.use("/sms", sendSMSRoutes);
 
-export default app;
+export default server; // Export HTTP server, not Express app
+export { app, io };

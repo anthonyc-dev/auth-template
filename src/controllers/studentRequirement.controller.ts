@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import { io } from "../app";
 
 const prisma = new PrismaClient();
 
@@ -227,6 +228,30 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       return;
     }
 
+    // Fetch the updated requirement to get complete data for socket emission
+    const updatedData = await prisma.studentRequirement.findFirst({
+      where: {
+        studentId,
+        coId,
+        requirementId,
+      },
+      include: {
+        officerRequirement: true,
+        clearingOfficer: true,
+      },
+    });
+
+    // Emit real-time update via Socket.IO
+    io.emit("studentRequirementUpdated", {
+      studentId,
+      coId,
+      requirementId,
+      status,
+      signedBy,
+      updatedData,
+      timestamp: new Date().toISOString(),
+    });
+
     res.status(200).json({
       message: "Student requirement updated successfully",
       data: updatedRequirement,
@@ -247,8 +272,32 @@ export const deleteStudentRequirement = async (req: Request, res: Response) => {
       return;
     }
 
+    // Fetch the requirement data before deletion for socket emission
+    const requirementToDelete = await prisma.studentRequirement.findUnique({
+      where: { id },
+      include: {
+        officerRequirement: true,
+        clearingOfficer: true,
+      },
+    });
+
+    if (!requirementToDelete) {
+      res.status(404).json({ message: "Student requirement not found" });
+      return;
+    }
+
     await prisma.studentRequirement.delete({
       where: { id },
+    });
+
+    // Emit real-time delete event via Socket.IO
+    io.emit("requirement:deleted", {
+      id,
+      studentId: requirementToDelete.studentId,
+      coId: requirementToDelete.coId,
+      requirementId: requirementToDelete.requirementId,
+      deletedData: requirementToDelete,
+      timestamp: new Date().toISOString(),
     });
 
     res

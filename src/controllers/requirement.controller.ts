@@ -197,18 +197,24 @@ export const createRequirement = async (
       }
 
       // Create studentRequirement entries
+      const studentRequirementData = assignedStudents.map((student) => ({
+        studentId: student.schoolId,
+        coId: userId,
+        requirementId: requirement.id,
+        status: "incomplete",
+        signedBy: userRole,
+      }));
+
       const studentRequirements = await tx.studentRequirement.createMany({
-        data: assignedStudents.map((student) => ({
-          studentId: student.schoolId,
-          coId: userId,
-          requirementId: requirement.id,
-          status: "incomplete",
-          signedBy: userRole,
-        })),
+        data: studentRequirementData,
       });
 
-      //real-time using socket.io
-      io.emit("requirement:created", studentRequirements);
+      //real-time using socket.io - emit the actual data with requirement details
+      io.emit("requirement:created", {
+        count: studentRequirements.count,
+        requirements: studentRequirementData,
+        requirementDetails: requirement, // Include the requirement details
+      });
 
       return {
         requirement,

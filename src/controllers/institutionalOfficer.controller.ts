@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { io } from "../app";
 
 const prisma = new PrismaClient();
 
@@ -35,6 +36,12 @@ export const createRequirement = async (req: Request, res: Response) => {
         semester,
         postedBy,
       },
+    });
+
+    // Emit real-time create event via Socket.IO
+    io.emit("institutional:requirement:created", {
+      requirement,
+      timestamp: new Date().toISOString(),
     });
 
     res.status(201).json(requirement);

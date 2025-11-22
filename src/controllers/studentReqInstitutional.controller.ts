@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import { io } from "../app";
 
 const prisma = new PrismaClient();
 
@@ -186,6 +187,35 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
           signedBy,
         },
       });
+
+    if (updatedRequirement.count === 0) {
+      res.status(404).json({ message: "Student requirement not found" });
+      return;
+    }
+
+    // Fetch the updated requirement to get complete data for socket emission
+    const updatedData = await prisma.studentRequirement.findFirst({
+      where: {
+        studentId,
+        coId,
+        requirementId,
+      },
+      include: {
+        officerRequirement: true,
+        clearingOfficer: true,
+      },
+    });
+
+    // Emit real-time update via Socket.IO
+    io.emit("institutional:studentRequirementUpdated", {
+      studentId,
+      coId,
+      requirementId,
+      status,
+      signedBy,
+      updatedData,
+      timestamp: new Date().toISOString(),
+    });
 
     res.status(200).json({
       message: "Student requirement updated successfully",
