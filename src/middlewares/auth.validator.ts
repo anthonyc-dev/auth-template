@@ -69,6 +69,9 @@ export const validateRegister = (
       "library",
       "tailoring",
       "guidance",
+      "umsa",
+      "sgo",
+      "kahayag",
     ];
     if (!validRoles.includes(role)) {
       res.status(400).json({
