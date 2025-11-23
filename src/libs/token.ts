@@ -6,6 +6,7 @@ export const cookieOptions = {
   secure: process.env.NODE_ENV !== "development",
   sameSite: "none" as const,
   path: "/",
+  domain: ".ascs.space", // IMPORTANT
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 

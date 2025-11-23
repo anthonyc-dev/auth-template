@@ -359,6 +359,23 @@ export const getRequirementById = async (req: Request, res: Response) => {
   }
 };
 
+// ✅ Get single requirement by userId for dean
+export const getRequirementByUserId = async (req: Request, res: Response) => {
+  try {
+    const requirement = await prisma.requirement.findFirst({
+      where: { userId: req.params.userId },
+      // include: { studentReq: true },
+    });
+    if (!requirement) {
+      res.status(404).json({ message: "Not found" });
+      return;
+    }
+    res.json(requirement);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // ✅ Update requirement
 export const updateRequirement = async (req: Request, res: Response) => {
   try {
