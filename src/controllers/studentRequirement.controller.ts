@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { io } from "../app";
+import { sendBulkSMS } from "../services/sms.service";
 
 const prisma = new PrismaClient();
 
@@ -275,9 +276,98 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
 
+    // Send SMS notifications
+    let smsNotification = null;
+
+    try {
+      // Fetch student details
+      const student = await prisma.student.findUnique({
+        where: { schoolId: studentId },
+        select: {
+          schoolId: true,
+          firstName: true,
+          lastName: true,
+          phoneNumber: true,
+        },
+      });
+
+      if (student && student.phoneNumber && student.phoneNumber.trim() !== "") {
+        let message = "";
+
+        // Send SMS when requirement is signed
+        if (status.toLowerCase() === "signed") {
+          const requirementName =
+            updatedData?.officerRequirement?.courseName || "Requirement";
+          message = `Hello ${student.firstName}! Your ${requirementName} requirement has been signed. Keep up the good work on your clearance!`;
+
+          const smsResult = await sendBulkSMS({
+            recipients: [student.phoneNumber],
+            message: message,
+          });
+
+          smsNotification = {
+            type: "requirement_signed",
+            sent: smsResult.successCount > 0,
+            message: "SMS notification sent for signed requirement",
+          };
+
+          console.log(
+            `📱 SMS sent to ${studentId}: Requirement signed notification`
+          );
+
+          // Check if all student requirements are now signed
+          const allStudentRequirements =
+            await prisma.studentRequirement.findMany({
+              where: { studentId },
+            });
+
+          const allInstitutionalRequirements =
+            await prisma.studentRequirementInstitutional.findMany({
+              where: { studentId },
+            });
+
+          const allStudentSigned = allStudentRequirements.every(
+            (req) => req.status.toLowerCase() === "signed"
+          );
+
+          const allInstitutionalSigned = allInstitutionalRequirements.every(
+            (req) => req.status.toLowerCase() === "signed"
+          );
+
+          // If all requirements are signed, send congratulatory SMS
+          if (allStudentSigned && allInstitutionalSigned) {
+            message = `Congratulations ${student.firstName}! All your clearance requirements are now SIGNED! Please proceed to the cashier to complete your clearance process.`;
+
+            const allSignedSmsResult = await sendBulkSMS({
+              recipients: [student.phoneNumber],
+              message: message,
+            });
+
+            smsNotification = {
+              type: "all_signed",
+              sent: allSignedSmsResult.successCount > 0,
+              message: "SMS notification sent for all requirements signed",
+            };
+
+            console.log(
+              `📱 SMS sent to ${studentId}: All requirements signed notification`
+            );
+          }
+        }
+      }
+    } catch (smsError) {
+      console.error("⚠️ Failed to send SMS notification:", smsError);
+      smsNotification = {
+        type: "error",
+        sent: false,
+        message: "Failed to send SMS notification",
+      };
+    }
+
     res.status(200).json({
       message: "Student requirement updated successfully",
       data: updatedRequirement,
+      smsNotification,
     });
   } catch (error) {
     console.error(error);

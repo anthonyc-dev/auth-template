@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { io } from "../app";
 import { generateQRCodeForStudent } from "./qrCode.controller";
+import { sendBulkSMS } from "../services/sms.service";
 
 const prisma = new PrismaClient();
 
@@ -297,12 +298,83 @@ export const updateStudentRequirement = async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
 
+    // Send SMS notifications
+    let smsNotification = null;
+
+    try {
+      // Fetch student details
+      const student = await prisma.student.findUnique({
+        where: { schoolId: studentId },
+        select: {
+          schoolId: true,
+          firstName: true,
+          lastName: true,
+          phoneNumber: true,
+        },
+      });
+
+      if (student && student.phoneNumber && student.phoneNumber.trim() !== "") {
+        let message = "";
+
+        // Send SMS when requirement is signed
+        if (status.toLowerCase() === "signed") {
+          const requirementName =
+            updatedData?.institutionalRequirement?.institutionalName ||
+            "Requirement";
+          message = `Hello ${student.firstName}! Your ${requirementName} has been signed. Keep up the good work on your clearance requirements!`;
+
+          const smsResult = await sendBulkSMS({
+            recipients: [student.phoneNumber],
+            message: message,
+          });
+
+          smsNotification = {
+            type: "requirement_signed",
+            sent: smsResult.successCount > 0,
+            message: "SMS notification sent for signed requirement",
+          };
+
+          console.log(
+            `📱 SMS sent to ${studentId}: Requirement signed notification`
+          );
+        }
+
+        // Send SMS when all requirements are cleared (QR generated)
+        if (qrData) {
+          message = `Congratulations ${student.firstName}! All your clearance requirements are now CLEARED! Your clearance QR code has been generated. You can now view and download your clearance permit.`;
+
+          const smsResult = await sendBulkSMS({
+            recipients: [student.phoneNumber],
+            message: message,
+          });
+
+          smsNotification = {
+            type: "all_cleared",
+            sent: smsResult.successCount > 0,
+            message: "SMS notification sent for all requirements cleared",
+          };
+
+          console.log(
+            `📱 SMS sent to ${studentId}: All requirements cleared notification`
+          );
+        }
+      }
+    } catch (smsError) {
+      console.error("⚠️ Failed to send SMS notification:", smsError);
+      smsNotification = {
+        type: "error",
+        sent: false,
+        message: "Failed to send SMS notification",
+      };
+    }
+
     res.status(200).json({
       message: "Student requirement updated successfully",
       data: updatedRequirement,
       canGenerateQR,
       qrGenerated: !!qrData,
       qrData: qrData || undefined,
+      smsNotification,
     });
   } catch (error) {
     console.error(error);
